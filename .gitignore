@@ -41,6 +41,9 @@ GIT_tag.txt
 *.map
 *.a
 
+# Build output directory
+build
+
 # Object files
 *.so
 *.so*

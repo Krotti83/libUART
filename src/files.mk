@@ -20,9 +20,12 @@
 
 LIBUART_DIR				= ./src
 
-CCFLAGS					+= -I $(LIBUART_DIR)/include
+LIBUART_SCSRC				+= $(BUILD_DIR)/static/posix_error.c
+LIBUART_SCSRC				+= $(BUILD_DIR)/static/posix_system.c
+LIBUART_SCSRC				+= $(BUILD_DIR)/static/uart.c
+LIBUART_SCSRC				+= $(BUILD_DIR)/static/util.c
 
-LIBUART_CSRC				+= $(LIBUART_DIR)/posix_error.c
-LIBUART_CSRC				+= $(LIBUART_DIR)/posix_system.c
-LIBUART_CSRC				+= $(LIBUART_DIR)/uart.c
-LIBUART_CSRC				+= $(LIBUART_DIR)/util.c
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/posix_error.c
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/posix_system.c
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/uart.c
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/util.c

@@ -258,9 +258,10 @@ check_pdflatex()
 generate_config()
 {
     echo -n "generating config.mk...  "
+    mkdir -p $_BUILD_DIR
     rm -f $_BUILD_DIR/$_BUILD_CONFIG
     echo "# libUART config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
-    echo >> $_BUILD_DIR/_$BUILD_CONFIG
+    echo >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "CONFIG_CONFIGURED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
     
     if [ $_BUILD_DOC -eq 1 ]
@@ -318,5 +319,7 @@ check_binutils
 check_compiler
 check_make
 check_pdflatex
+generate_config
 cleanup
+
 exit 0
