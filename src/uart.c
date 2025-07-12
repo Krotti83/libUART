@@ -51,7 +51,7 @@ static int parse_option(uart_t *uart, const char *opt)
             uart->data_bits = UART_DATA_8;
             break;
         default:
-            uart->errno = UART_EDATA;
+            uart->error = UART_EDATA;
             libuart_error(uart, __func__, "invalid/unsupported data bits");
             return -1;
         }
@@ -70,7 +70,7 @@ static int parse_option(uart_t *uart, const char *opt)
             uart->parity = UART_PARITY_EVEN;
             break;
         default:
-            uart->errno = UART_EPARITY;
+            uart->error = UART_EPARITY;
             libuart_error(uart, __func__, "invalid/unsupported parity");
             return -1;
         }
@@ -86,7 +86,7 @@ static int parse_option(uart_t *uart, const char *opt)
             uart->stop_bits = UART_STOP_2_0;
             break;
         default:
-            uart->errno = UART_ESTOP;
+            uart->error = UART_ESTOP;
             libuart_error(uart, __func__, "invalid/unsupported stop bits");
             return -1;
         }
@@ -105,7 +105,7 @@ static int parse_option(uart_t *uart, const char *opt)
             uart->flow_ctrl = UART_FLOW_HW;
             break;
         default:
-            uart->errno = UART_EFLOW;
+            uart->error = UART_EFLOW;
             libuart_error(uart, __func__, "invalid/unsupported flow control");
             return -1;
         }
@@ -113,7 +113,7 @@ static int parse_option(uart_t *uart, const char *opt)
         i++;
         
         if (opt[i] != '\0') {
-            uart->errno = UART_EOPT;
+            uart->error = UART_EOPT;
             libuart_error(uart, __func__, "invalid options");
             return -1;
         }
@@ -139,7 +139,7 @@ uart_t *UART_open(const char *dev, int baud, const char *opt)
     }
     
     if (strlen(dev) >= DEV_NAME_LEN) {
-        p->errno = UART_EDEV;
+        p->error = UART_EDEV;
         libuart_error(p, __func__, "UART device name too long");
         free(p);
         return NULL;
@@ -189,13 +189,13 @@ int UART_send(uart_t *uart, char *send_buf, int len)
     }
     
     if (!send_buf) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid send buffer pointer");
         return -1;
     }
     
     if (len < 1) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid send buffer length");
         return -1;
     }
@@ -211,13 +211,13 @@ int UART_recv(uart_t *uart, char *recv_buf, int len)
     }
     
     if (!recv_buf) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid receive buffer pointer");
         return -1;
     }
     
     if (len < 1) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid receive buffer length");
         return -1;
     }
@@ -233,7 +233,7 @@ int UART_puts(uart_t *uart, char *msg)
     }
     
     if (!msg) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid char pointer");
         return -1;
     }
@@ -252,7 +252,7 @@ int UART_getc(uart_t *uart, char *ret_c)
     }
     
     if (!ret_c) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid char pointer");
         return -1;
     }
@@ -291,7 +291,7 @@ int UART_get_baud(uart_t *uart, int *ret_baud)
     }
     
     if (!ret_baud) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -308,7 +308,7 @@ int UART_get_fd(uart_t *uart, int *ret_fd)
     }
     
     if (!ret_fd) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -325,7 +325,7 @@ int UART_get_dev(uart_t *uart, char **ret_dev)
     }
     
     if (!ret_dev) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid char pointer");
         return -1;
     }
@@ -353,7 +353,7 @@ int UART_get_databits(uart_t *uart, int *ret_data_bits)
     }
     
     if (!ret_data_bits) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -381,7 +381,7 @@ int UART_get_parity(uart_t *uart, int *ret_parity)
     }
     
     if (!ret_parity) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -409,7 +409,7 @@ int UART_get_stopbits(uart_t *uart, int *ret_stop_bits)
     }
     
     if (!ret_stop_bits) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -437,7 +437,7 @@ int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl)
     }
     
     if (!ret_flow_ctrl) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -464,7 +464,7 @@ int UART_get_pin(uart_t *uart, int pin, int *ret_state)
     }
     
     if (!ret_state) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }
@@ -480,7 +480,7 @@ int UART_get_bytes_available(uart_t *uart, int *ret_num)
     }
     
     if (!ret_num) {
-        uart->errno = UART_EINVAL;
+        uart->error = UART_EINVAL;
         libuart_error(NULL, __func__, "invalid int pointer");
         return -1;
     }

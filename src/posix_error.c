@@ -40,7 +40,7 @@ void libuart_error(struct _uart *uart, const char *func, const char *err_msg)
         uart->err_msg = (char *) malloc(UART_EMSGLEN);
         
         if (!uart->err_msg) {
-            uart->err_no = UART_ENOMEM;
+            uart->error = UART_ENOMEM;
             return;
         }
         
@@ -67,7 +67,7 @@ void libuart_error(struct _uart *uart, const char *func, const char *err_msg)
         uart->err_msg = (char *) realloc(uart->err_msg, uart->err_msg_len + UART_EMSGLEN);
         
         if (!uart->err_msg) {
-            uart->err_no = UART_ENOMEM;
+            uart->error = UART_ENOMEM;
             return;
         }
         

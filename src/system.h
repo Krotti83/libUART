@@ -33,7 +33,7 @@ struct _uart {
     int stop_bits;
     int parity;
     int flow_ctrl;
-    int errno;
+    int error;
     char *err_msg;
     int err_msg_len;
 };
