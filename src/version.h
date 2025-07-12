@@ -24,6 +24,6 @@
 #define _LIBUART_VERSION_H
 
 #define LIBUART_NAME            "libUART"
-#define LIBUART_VERSION         "0.1.0.0"
+#define LIBUART_VERSION         "0.1.0.1"
 
 #endif

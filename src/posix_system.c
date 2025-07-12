@@ -888,9 +888,14 @@ int uart_init(struct _uart *uart)
         return -1;
     }
     
-    /* set raw input mode */
-    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-    
+    /* set raw mode (see man cfmakeraw) */
+    options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+    options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP |
+                         INLCR | IGNCR | ICRNL | IXON);
+    options.c_oflag &= ~OPOST;
+    options.c_cflag &= ~(CSIZE | PARENB);
+    options.c_cflag |= CS8;
+
     /* enable receiver and set local mode */
     options.c_cflag |= (CLOCAL | CREAD);
     
