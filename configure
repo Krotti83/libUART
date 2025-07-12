@@ -1,0 +1,322 @@
+#!/bin/sh
+
+#
+# libUART
+#
+# Easy to use library for accessing the UART
+#
+# Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+_SCRIPT_VERSION="v0.1.0.0"
+_SCRIPT_DEFAULT=0
+
+_CONFIG_OS=0
+_CONFIG_MACHINE=0
+_CONFIG_VERSION="v0.1.0.0"
+_CONFIG_SIZEOF_SIZET=0
+_CONFIG_SIZEOF_INT=0
+_CONFIG_SIZEOF_LONGINT=0
+_CONFIG_SIZEOF_FLOAT=0
+_CONFIG_SIZEOF_DOUBLE=0
+_CONFIG_SIZEOF_LONGDOUBLE=0
+
+_BUILD_INTREE=1
+_BUILD_CURDIR="."
+_BUILD_SRCDIR="."
+_BUILD_DIR="./build"
+_BUILD_CONFIG="config.mk"
+_BUILD_MAKEFILE="Makefile"
+_BUILD_CXX=0
+_BUILD_DOC=0
+
+_INSTALL_PREFIX=/usr/local
+_INSTALL_INCDIR="$_INSTALL_PREFIX/include"
+_INSTALL_LIBDIR="$_INSTALL_PREFIX/lib"
+_INSTALL_SHAREDIR="$_INSTALL_PREFIX/share/libUART"
+_INSTALL_DOCDIR="$_INSTALL_SHAREDIR/doc"
+
+# Cleanup
+cleanup()
+{
+    unset _SCRIPT_VERSION
+    unset _SCRIPT_DEFAULT
+    
+    unset _CONFIG_OS
+    unset _CONFIG_MACHINE
+    unset _CONFIG_VERSION
+    unset _CONFIG_SIZEOF_SIZET
+    unset _CONFIG_SIZEOF_INT
+    unset _CONFIG_SIZEOF_LONGINT
+    unset _CONFIG_SIZEOF_FLOAT
+    unset _CONFIG_SIZEOF_DOUBLE
+    unset _CONFIG_SIZEOF_LONGDOUBLE
+    
+    unset _BUILD_INTREE
+    unset _BUILD_CURDIR
+    unset _BUILD_SRCDIR
+    unset _BUILD_DIR
+    unset _BUILD_CONFIG
+    unset _BUILD_MAKEFILE
+    unset _BUILD_CXX
+    unset _BUILD_DOC
+    
+    unset _INSTALL_PREFIX
+    unset _INSTALL_INCDIR
+    unset _INSTALL_LIBDIR
+    unset _INSTALL_SHAREDIR
+    unset _INSTALL_DOCDIR
+}
+
+show_usage()
+{
+    _SCRIPT=$0
+    echo "usage: $_SCRIPT [OPTION]... [VAR=VALUE]..."
+    
+    unset _SCRIPT
+}
+
+show_help()
+{
+    echo "\`configure\` configures libUART"
+    echo
+    show_usage
+    echo
+    echo "Configuration:"
+    echo "  -H, --help              display this help and exit"
+    echo "  -V, --version           display version information and exit"
+    echo
+    echo "Installation directories:"
+    echo "  --prefix=PREFIX         install architecture-independent files in PREFIX"
+    echo "                          [$_INSTALL_PREFIX]"
+    echo
+    echo "Optional Features:"
+    echo "  --enable-doc            enable building the PDF documentation [default=no]"
+}
+
+# Check make utility
+check_make()
+{
+    echo -n "checking for GNU make... "
+    _RESULT=$(which make)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+    
+    unset _RESULT
+}
+
+# Check build directory, if in-tree
+check_build()
+{
+    _PATH=$(dirname $0)
+    
+    if [ $_PATH -eq "." ]
+    then
+        _BUILD_INTREE=1
+        mkdir -p build
+    else
+        _BUILD_INTREE=0
+    fi
+    
+    _BUILD_CURDIR=$(pwd)
+    
+    unset _PATH
+}
+
+# Check compiler suite
+check_compiler()
+{
+    # Simple check for C preprocessor
+    echo -n "checking for C preprocessor (cpp)... "
+    _RESULT=$(which cpp)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+    
+    # Simple check for GCC
+    echo -n "checking for C compiler (gcc)... "
+    _RESULT=$(which gcc)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+    
+    # Simple check if GCC can compile and link
+    echo -n "checking whether C compiler (gcc) works... "
+    echo "int foo(void){return 0;}" > /tmp/configure_test.c
+    g++ -c -o /tmp/configure_test.o /tmp/configure_test.c
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed"
+        exit 1
+    else
+        echo "yes"
+        rm -Rf /tmp/configure_test.o
+    fi
+    
+    rm -Rf $BUILD_DIR/tmp.c
+}
+
+check_binutils()
+{
+    echo -n "checking for GNU Assembler (as)... "
+    _RESULT=$(which as)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+    
+    echo -n "checking for GNU linker (ld)... "
+    _RESULT=$(which ld)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+    
+    echo -n "checking for GNU archiver (ar)... "
+    _RESULT=$(which ar)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+    
+    echo -n "checking for GNU objdump (objdump)... "
+    _RESULT=$(which objdump)
+    
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+}
+
+# Simple check if LaTex PDF compiler is available (optional)
+check_pdflatex()
+{
+    echo -n "checking for LaTeX PDF compiler (pdflatex)... "
+    _RESULT=$(which pdflatex)
+    
+    if [ $? -ne 0 ]
+    then
+        if [ $_BUILD_DOC -ne 0 ]
+        then
+            echo "failed (might not installed)"
+            exit 1
+        else
+            echo "warning (not needed)"
+        fi
+    else
+        echo $_RESULT
+    fi
+    
+    unset _RESULT
+}
+
+# Generate libJPMath config.mk
+generate_config()
+{
+    echo -n "generating config.mk...  "
+    rm -f $_BUILD_DIR/$_BUILD_CONFIG
+    echo "# libUART config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
+    echo >> $_BUILD_DIR/_$BUILD_CONFIG
+    echo "CONFIG_CONFIGURED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+    
+    if [ $_BUILD_DOC -eq 1 ]
+    then
+        echo "CONFIG_BUILD_DOC = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+    else
+        echo "CONFIG_BUILD_DOC = no" >> $_BUILD_DIR/$_BUILD_CONFIG
+    fi
+    
+    echo "done"
+}
+
+if [ $# -eq 0 ]
+then
+    _SCRIPT_DEFAULT=1
+else
+    while [ $# -ne 0 ]
+    do
+        case $1 in
+        -H|--help)
+            show_help
+            cleanup
+            exit 1
+            ;;
+        -V|--version)
+            show_version
+            cleanup
+            exit 1
+            ;;
+        --prefix=*)
+            _INSTALL_PREFIX=$(echo $1 | sed 's/^--prefix=\([[:print:]]\+\)/\1/g')
+            shift
+            ;;
+        --enable-doc)
+            _BUILD_DOC=1
+            shift
+            ;;
+        *)
+            echo -n "unknown option... "
+            echo $1
+            show_usage
+            cleanup
+            exit 1
+            ;;
+        esac
+    done
+fi
+
+echo -n "target OS... "
+uname -o
+echo -n "target machine... "
+uname -m
+
+check_binutils
+check_compiler
+check_make
+check_pdflatex
+cleanup
+exit 0
