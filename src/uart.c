@@ -127,7 +127,7 @@ void UART_init(void)
     uart_init_done = 1;
 }
 
-uart_t *UART_open(const char *dev, int baud, const char *opt)
+uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt)
 {
     uart_t *p;
     
@@ -181,7 +181,7 @@ void UART_close(uart_t *uart)
     uart_close(uart);
 }
 
-int UART_send(uart_t *uart, char *send_buf, int len)
+ssize_t UART_send(uart_t *uart, char *send_buf, size_t len)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -203,7 +203,7 @@ int UART_send(uart_t *uart, char *send_buf, int len)
     return uart_send(uart, send_buf, len);
 }
 
-int UART_recv(uart_t *uart, char *recv_buf, int len)
+ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -225,7 +225,7 @@ int UART_recv(uart_t *uart, char *recv_buf, int len)
     return uart_recv(uart, recv_buf, len);
 }
 
-int UART_puts(uart_t *uart, char *msg)
+ssize_t UART_puts(uart_t *uart, char *msg)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -272,7 +272,7 @@ int UART_flush(uart_t *uart)
     return uart_flush(uart);
 }
 
-int UART_set_baud(uart_t *uart, int baud)
+int UART_set_baud(uart_t *uart, enum e_baud baud)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -334,7 +334,7 @@ int UART_get_dev(uart_t *uart, char **ret_dev)
     return 0;
 }
 
-int UART_set_databits(uart_t *uart, int data_bits)
+int UART_set_databits(uart_t *uart, enum e_data data_bits)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -390,7 +390,7 @@ int UART_get_parity(uart_t *uart, int *ret_parity)
     return 0;
 }
 
-int UART_set_stopbits(uart_t *uart, int stop_bits)
+int UART_set_stopbits(uart_t *uart, enum e_stop stop_bits)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -418,7 +418,7 @@ int UART_get_stopbits(uart_t *uart, int *ret_stop_bits)
     return 0;
 }
 
-int UART_set_flowctrl(uart_t *uart, int flow_ctrl)
+int UART_set_flowctrl(uart_t *uart, enum e_flow flow_ctrl)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -446,7 +446,7 @@ int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl)
     return 0;
 }
 
-int UART_set_pin(uart_t *uart, int pin, int state)
+int UART_set_pin(uart_t *uart, enum e_pins pin, int state)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");
@@ -456,7 +456,7 @@ int UART_set_pin(uart_t *uart, int pin, int state)
     return uart_set_pin(uart, pin, state);
 }
 
-int UART_get_pin(uart_t *uart, int pin, int *ret_state)
+int UART_get_pin(uart_t *uart, enum e_pins pin, int *ret_state)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");

@@ -23,6 +23,13 @@
 #ifndef _LIBUART_UART_H
 #define _LIBUART_UART_H
 
+#include <stddef.h>
+
+#ifndef _LIBUART_SSIZE_T
+#define _LIBUART_SSIZE_T
+typedef long int ssize_t;
+#endif
+
 /* UART error codes */
 #define UART_ESUCCESS       0   /* no error */
 #define UART_EINVAL         1   /* invalid argumet */
@@ -135,27 +142,27 @@ enum e_pins {
 #define UART_PIN_HIGH       1
 
 extern void UART_init(void);
-extern uart_t *UART_open(const char *dev, int baud, const char *opt);
+extern uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt);
 extern void UART_close(uart_t *uart);
-extern int UART_send(uart_t *uart, char *send_buf, int len);
-extern int UART_recv(uart_t *uart, char *recv_buf, int len);
-extern int UART_puts(uart_t *uart, char *msg);
+extern ssize_t UART_send(uart_t *uart, char *send_buf, size_t len);
+extern ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len);
+extern ssize_t UART_puts(uart_t *uart, char *msg);
 extern int UART_getc(uart_t *uart, char *ret_c);
 extern int UART_flush(uart_t *uart);
-extern int UART_set_baud(uart_t *uart, int baud);
+extern int UART_set_baud(uart_t *uart, enum e_baud baud);
 extern int UART_get_baud(uart_t *uart, int *ret_baud);
 extern int UART_get_fd(uart_t *uart, int *ret_fd);
 extern int UART_get_dev(uart_t *uart, char **ret_dev);
-extern int UART_set_databits(uart_t *uart, int data_bits);
+extern int UART_set_databits(uart_t *uart, enum e_data data_bits);
 extern int UART_get_databits(uart_t *uart, int *ret_data_bits);
 extern int UART_set_parity(uart_t *uart, int parity);
 extern int UART_get_parity(uart_t *uart, int *ret_parity);
-extern int UART_set_stopbits(uart_t *uart, int stop_bits);
+extern int UART_set_stopbits(uart_t *uart, enum e_stop stop_bits);
 extern int UART_get_stopbits(uart_t *uart, int *ret_stop_bits);
-extern int UART_set_flowctrl(uart_t *uart, int flow_ctrl);
+extern int UART_set_flowctrl(uart_t *uart, enum e_flow flow_ctrl);
 extern int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl);
-extern int UART_set_pin(uart_t *uart, int pin, int state);
-extern int UART_get_pin(uart_t *uart, int pin, int *ret_state);
+extern int UART_set_pin(uart_t *uart, enum e_pins pin, int state);
+extern int UART_get_pin(uart_t *uart, enum e_pins pin, int *ret_state);
 extern int UART_get_bytes_available(uart_t *uart, int *ret_num);
 extern void UART_set_errmsg(int msg_enable);
 extern char *UART_get_libname(void);
