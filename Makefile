@@ -171,7 +171,7 @@ ifeq ($(CONFIG_BUILD_STATIC),yes)
 endif
 ifeq ($(CONFIG_BUILD_DOC),yes)
 	@$(INSTALL) -d $(INSTALL_DOCDIR)
-	@$(INSTALL) -m 644 -D $(BUILD_DIR)/libUART.pdf $(INSTALL_DOCDIR)
+	@$(INSTALL) -m 644 -D $(BUILD_DIR)/doc/libUART.pdf $(INSTALL_DOCDIR)
 endif
 
 # Build documentation
