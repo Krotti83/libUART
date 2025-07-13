@@ -44,9 +44,9 @@ _BUILD_DOC=0
 
 _INSTALL_PREFIX=/usr/local
 _INSTALL_INCDIR="$_INSTALL_PREFIX/include"
-_INSTALL_LIBDIR="$_INSTALL_PREFIX/lib"
+_INSTALL_LIBDIR="$_INSTALL_PREFIX/lib64"
 _INSTALL_SHAREDIR="$_INSTALL_PREFIX/share/libUART"
-_INSTALL_DOCDIR="$_INSTALL_SHAREDIR/doc"
+_INSTALL_DOCDIR="$_INSTALL_PREFIX/doc/libUART"
 
 # Cleanup
 cleanup()
@@ -263,13 +263,18 @@ generate_config()
     echo "# libUART config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
     echo >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "CONFIG_CONFIGURED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
-    
+
     if [ $_BUILD_DOC -eq 1 ]
     then
         echo "CONFIG_BUILD_DOC = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
     else
         echo "CONFIG_BUILD_DOC = no" >> $_BUILD_DIR/$_BUILD_CONFIG
     fi
+
+    echo "INSTALL_PREFIX = $_INSTALL_PREFIX" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "INSTALL_INCDIR = $_INSTALL_INCDIR" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "INSTALL_LIBDIR = $_INSTALL_LIBDIR" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "INSTALL_DOCDIR = $_INSTALL_DOCDIR" >> $_BUILD_DIR/$_BUILD_CONFIG
     
     echo "done"
 }

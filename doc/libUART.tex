@@ -1,0 +1,49 @@
+\documentclass[10pt, a4paper]{report}
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{listings}
+\usepackage{color}
+\lstset{
+    language={[ansi]C},
+    basicstyle=\small\sffamily,
+    numbers=left,
+    numberstyle=\tiny,
+    frame=tb,
+    tabsize=4,
+    columns=fixed,
+    showstringspaces=false,
+    showtabs=false,
+    keepspaces,
+    commentstyle=\color{red},
+    keywordstyle=\color{blue},
+    numberstyle=\color{red},
+    stringstyle=\color{red},
+    identifierstyle=\color{red}
+}
+\title{libUART - Easy to use UART library \\ Programming Guide v0.1}
+\author{Johannes Krottmayer}
+\begin{document}
+\maketitle
+\tableofcontents
+\chapter{Preamble}
+This library is for the easy usage from the UART interface (serial port). It should help
+a programmer to easy include UART communications in the main application.
+\chapter{Legal Notice}
+This library is fully licensed under the ISC license. You can use it for private and
+for commercial purposes.
+\section{License Text}
+Copyright 2025 Johannes Krottmayer <krotti83@proton.me>\newline
+\newline
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.\newline
+\newline
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\end{document}

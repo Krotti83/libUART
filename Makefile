@@ -32,11 +32,17 @@ CP			= cp -Rf
 MKDIR			= mkdir -p
 LN			= ln -sf
 CD			= cd
+INSTALL			= install
 
 # Toolchain
-AR			= $(CROSS_COMPILE)ar
-CC			= $(CROSS_COMPILE)gcc
-LD			= $(CROSS_COMPILE)gcc
+AR			= ar
+CC			= gcc
+LD			= gcc
+PDFLATEX		= pdflatex
+
+# pdflatex flags
+PDFLATEXFLAGS		+= -interaction batchmode
+PDFLATEXFLAGS		+= -output-directory $(BUILD_DIR)
 
 # Generic C compiler flags
 CCFLAGS			+= -g
@@ -73,7 +79,11 @@ include ./src/files.mk
 LIBUART_SCOBJ		+= $(LIBUART_SCSRC:.c=.o)
 LIBUART_DCOBJ		+= $(LIBUART_DCSRC:.c=.o)
 
+ifneq ($(CONFIG_BUILD_DOC),yes)
 all: copy_sources libuart_static libuart_dynamic link_dynamic
+else
+all: copy_sources libuart_static libuart_dynamic link_dynamic build_doc
+endif
 
 #
 # libUART (static)
@@ -81,13 +91,13 @@ all: copy_sources libuart_static libuart_dynamic link_dynamic
 
 # Archive object files
 libuart_static: $(LIBUART_SCOBJ)
-	@echo "   [AR]   $(BUILD_DIR)/$(TARGET_STATIC)"
+	@echo "   [AR]       $(BUILD_DIR)/$(TARGET_STATIC)"
 	@$(AR) rcs $(BUILD_DIR)/$(TARGET_STATIC) \
 	$(LIBUART_SCOBJ)
 
 # Compile C sources
 $(LIBUART_SCOBJ): %.o: %.c
-	@echo "   [CC]   $@"
+	@echo "   [CC]       $@"
 	@$(CC) -c $(CCFLAGS) -I $(BUILD_DIR) -o $@ $<
 
 #
@@ -96,7 +106,7 @@ $(LIBUART_SCOBJ): %.o: %.c
 
 # Link object files
 libuart_dynamic: $(LIBUART_DCOBJ)
-	@echo "   [LD]   $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
+	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
 	@$(CC) -shared $(CCFLAGS) $(CCFLAGS_DYN) \
 	$(LDFLAGS) $(LDFLAGS_DYN) \
 	-o $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1 \
@@ -104,13 +114,38 @@ libuart_dynamic: $(LIBUART_DCOBJ)
 
 # Compile C sources
 $(LIBUART_DCOBJ): %.o: %.c
-	@echo "   [CC]   $@"
+	@echo "   [CC]       $@"
 	@$(CC) -c $(CCFLAGS) $(CCFLAGS_DYN) -I $(BUILD_DIR) -o $@ $<
+
+# Install
+install: install_libUART
+
+# Install libUART
+.PHONY: install_libUART
+install_libUART:
+	@echo "   [INSTALL]  $(INSTALL_INCDIR)/UART.h"
+	@$(INSTALL) -d $(INSTALL_INCDIR)
+	@$(INSTALL) -m 644 -D $(BUILD_DIR)/UART.h $(INSTALL_INCDIR)
+	@$(INSTALL) -d $(INSTALL_LIBDIR)
+	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so.0.1 $(INSTALL_LIBDIR)
+	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so.0 $(INSTALL_LIBDIR)
+	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so $(INSTALL_LIBDIR)
+	@$(INSTALL) -m 644 -D $(BUILD_DIR)/*.a $(INSTALL_LIBDIR)
+ifeq ($(CONFIG_BUILD_DOC),yes)
+	@$(INSTALL) -d $(INSTALL_DOCDIR)
+	@$(INSTALL) -m 644 -D $(BUILD_DIR)/libUART.pdf $(INSTALL_DOCDIR)
+endif
+
+# Build documentation
+.PHONY: build_doc
+build_doc:
+	@echo "   [PDFLATEX] $(BUILD_DIR)/$(TARGET).pdf"
+	@$(PDFLATEX) $(PDFLATEXFLAGS) $(BUILD_DIR)/doc/$(TARGET).tex 1>/dev/null
 
 # Clean (remove build directory)
 .PHONY: clean
 clean:
-	@echo "   [CLEAN]"
+	@echo "   [CLEAN]    $(BUILD_DIR)"
 	@$(RM) $(BUILD_DIR)
 
 # Copy sources in build directory
@@ -125,11 +160,13 @@ copy_sources:
 	@$(CP) $(LIBUART_DIR)/*.h $(BUILD_DIR)/dynamic
 	@$(CP) $(LIBUART_DIR)/include/*.h $(BUILD_DIR)
 	@$(CP) $(LIBUART_DIR)/*.mk $(BUILD_DIR)/dynamic
+	@$(MKDIR) $(BUILD_DIR)/doc
+	@$(CP) doc/$(TARGET).tex $(BUILD_DIR)/doc
 
 # Create symbolic link for dynamic (shared) library
 .PHONY: link_dynamic
 link_dynamic:
-	@echo "   [LN]   $(BUILD_DIR)/$(TARGET_DYNAMIC).0 -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
+	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0 -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
 	@$(LN) $(TARGET_DYNAMIC).0.1 $(BUILD_DIR)/$(TARGET_DYNAMIC).0
-	@echo "   [LN]   $(BUILD_DIR)/$(TARGET_DYNAMIC) -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0"
+	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC) -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0"
 	@$(LN) $(TARGET_DYNAMIC).0 $(BUILD_DIR)/$(TARGET_DYNAMIC)
