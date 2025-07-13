@@ -9,7 +9,8 @@ Header ``libUART``
 
 To use the library include the following header in your source code.
 
-::
+Usage
+~~~~~::
     #include <UART.h>
 
 Function ``void UART_init(void)``
@@ -31,9 +32,7 @@ Returns
 None
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_init();
 
 Notes
@@ -69,9 +68,7 @@ Returns
 Returns a valid UART object (handle), or ``NULL`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     uart_t *uart_obj;
 
     uart_obj = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
@@ -95,9 +92,7 @@ Returns
 None
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_close(uart_obj);
 
 
@@ -122,9 +117,7 @@ Returns
 Returns number of sent bytes, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_send(uart_obj, buf, 256);
 
 
@@ -149,9 +142,7 @@ Returns
 Returns number of received bytes, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_recv(uart_obj, buf, 256);
 
 Function ``ssize_t UART_puts(uart_t *uart, char *msg)``
@@ -174,9 +165,7 @@ Returns
 Returns number of sent bytes, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_puts(uart_obj, buf, 256);
 
 
@@ -200,9 +189,7 @@ Returns
 Returns number of sent bytes, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_putc(uart_obj, 'A');
 
 
@@ -226,9 +213,7 @@ Returns
 Returns number of received bytes, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     char c;
 
     UART_getc(uart_obj, &c);
@@ -253,9 +238,7 @@ Returns
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_flush(uart_obj);
 
 Function ``int UART_set_baud(uart_t *uart, enum e_baud baud)``
@@ -278,9 +261,7 @@ Returns
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     UART_set_baud(uart_obj, UART_BAUD_115200);
 
 Function ``int UART_get_baud(uart_t *uart, int *ret_baud)``
@@ -303,9 +284,7 @@ Returns
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     int baud;
 
     UART_get_baud(uart_obj, &baud);
@@ -525,9 +504,7 @@ Returns
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     int state;
 
     UART_set_pin(uart_obj, UART_PIN_RTS, UART_PIN_HIGH);
@@ -562,9 +539,7 @@ Returns
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     int state;
 
     UART_get_pin(uart_obj, UART_PIN_CTS, &state);
@@ -589,9 +564,7 @@ Returns
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
 Usage
-~~~~~
-
-::
+~~~~~::
     int bytes;
 
     UART_get_bytes_available(uart_obj, &bytes);
