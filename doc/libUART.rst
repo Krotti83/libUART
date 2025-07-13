@@ -17,21 +17,30 @@ Description
 
 Initializes the UART library.
 
-Usage
-~~~~~::
-    UART_init();
-
 Arguments
 ~~~~~~~~~
+
     - None
+
+Returns
+~~~~~~~
+
+None
+
+Usage
+~~~~~
+
+::
+    UART_init();
 
 Notes
 ~~~~~
+
 This function is currently a stub. It isn't really required, but should
 be used for further API changes.
 
 Function ``uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt)``
---------------------------------------------------------------------------
+----------------------------------------------------------------------------------
 
 Description
 ~~~~~~~~~~~
@@ -40,7 +49,7 @@ Opens the UART interface for the specific device.
 
 Arguments
 ~~~~~~~~~
-    - Device (``dev``)
+    - Device path (``dev``)
     - Baud rate (``baud``)
     - Options string (``opt``)
 
@@ -50,9 +59,14 @@ are ``N`` (for none), ``O`` (for odd), ``E`` (for even)), the third character is
 bits (current valid number are ``1`` and ``2``) and the last character represent the flow control
 (valid character are ``N`` (for none), ``S`` (for software), ``H`` (for hardware)).
 
-Usage
-~~~~~::
+Returns
+~~~~~~~
 
+Returns a valid UART object (handle), or ``NULL`` if an error occurred.
+
+Usage
+~~~~~
+::
     uart_t *uart_obj;
 
     uart_obj = UART_init("/dev/ttyS0", UART_BAUD_115200, "8N1N");
@@ -65,6 +79,22 @@ Description
 
 Closes the UART interface.
 
+Arguments
+~~~~~~~~~
+
+    - UART object/handle (``uart``)
+
+Returns
+~~~~~~~
+
+None
+
+Usage
+~~~~~
+::
+    UART_close(uart_obj);
+
+
 Function ``ssize_t UART_send(uart_t *uart, char *send_buf, size_t len)``
 ------------------------------------------------------------------------
 
@@ -73,6 +103,19 @@ Description
 
 Send data from ``send_buf`` over UART connection.
 
+Arguments
+~~~~~~~~~
+
+    - UART object/handle (``uart``)
+    - Send buffer (``send_buf``)
+    - Length of buffer (``len``)
+
+Returns
+~~~~~~~
+
+Returns number of sent bytes, or ``-1`` if an error occurred.
+
+
 Function ``ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len)``
 ------------------------------------------------------------------------
 
@@ -80,6 +123,18 @@ Description
 ~~~~~~~~~~~
 
 Receive over UART and store the data in ``recv_buf``.
+
+Arguments
+~~~~~~~~~
+
+    - UART object/handle (``uart``)
+    - Receive buffer (``recv_buf``)
+    - Length of buffer (``len``)
+
+Returns
+~~~~~~~
+
+Returns number of sent bytes, or ``-1`` if an error occurred.
 
 Function ``ssize_t UART_puts(uart_t *uart, char *msg)``
 -------------------------------------------------------
@@ -241,6 +296,16 @@ Description
 
 Returns the library name.
 
+Arguments
+~~~~~~~~~
+
+    - None
+
+Returns
+~~~~~~~
+
+Returns the library name string.
+
 Function ``char *UART_get_libversion(void)``
 --------------------------------------------
 
@@ -248,3 +313,13 @@ Description
 ~~~~~~~~~~~
 
 Returns the library version.
+
+Arguments
+~~~~~~~~~
+
+    - None
+
+Returns
+~~~~~~~
+
+Returns the library version string.
