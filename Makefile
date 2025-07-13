@@ -19,7 +19,7 @@
 #
 
 BUILD_DIR		= ./build
-BUILD_CONFIG		= $(TARGET)/config.mk
+BUILD_CONFIG		= $(BUILD_DIR)/config.mk
 
 TARGET			= libUART
 
@@ -64,6 +64,10 @@ LDFLAGS_DYN		+= -Wl,-Bdynamic
 
 -include $(BUILD_CONFIG)
 
+ifneq ($(CONFIG_CONFIGURED),yes)
+$(error "$(TARGET) build system not configured, run ./configure in root directory")
+endif
+
 include ./src/files.mk
 
 LIBUART_SCOBJ		+= $(LIBUART_SCSRC:.c=.o)
@@ -103,17 +107,13 @@ $(LIBUART_DCOBJ): %.o: %.c
 	@echo "   [CC]   $@"
 	@$(CC) -c $(CCFLAGS) $(CCFLAGS_DYN) -I $(BUILD_DIR) -o $@ $<
 
+# Clean (remove build directory)
 .PHONY: clean
 clean:
 	@echo "   [CLEAN]"
 	@$(RM) $(BUILD_DIR)
 
-.PHONY: check_config
-check_config:
-	@echo "   [CHECK]"
-	@$(RM) $(BUILD_DIR)
-	@$(RM) $(TARGET_STATIC)
-
+# Copy sources in build directory
 .PHONY: copy_sources
 copy_sources:
 	@$(MKDIR) $(BUILD_DIR)/static
@@ -126,6 +126,7 @@ copy_sources:
 	@$(CP) $(LIBUART_DIR)/include/*.h $(BUILD_DIR)
 	@$(CP) $(LIBUART_DIR)/*.mk $(BUILD_DIR)/dynamic
 
+# Create symbolic link for dynamic (shared) library
 .PHONY: link_dynamic
 link_dynamic:
 	@echo "   [LN]   $(BUILD_DIR)/$(TARGET_DYNAMIC).0 -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
