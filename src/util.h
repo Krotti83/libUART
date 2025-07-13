@@ -23,6 +23,11 @@
 #ifndef _LIBUART_UTIL_H
 #define _LIBUART_UTIL_H
 
+#define STRINGIFY(x)    #x
+#define TOSTRING(x)     STRINGIFY(x)
+#define DO_EXPAND(x)    x ## 1
+#define EXPAND(x)       DO_EXPAND(x)
+
 extern int enum_contains(int enum_values[], int len, int value);
 
 #endif

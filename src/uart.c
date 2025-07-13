@@ -26,6 +26,7 @@
 #include "error.h"
 #include "system.h"
 #include "version.h"
+#include "util.h"
 
 #include <UART.h>
 
@@ -488,12 +489,16 @@ int UART_get_bytes_available(uart_t *uart, int *ret_num)
     return uart_get_bytes(uart, ret_num);
 }
 
-char *libUART_get_libname(void)
+char *UART_get_libname(void)
 {
     return LIBUART_NAME;
 }
 
-char *libUART_get_libversion(void)
+char *UART_get_libversion(void)
 {
+#ifndef GIT_VERSION
     return LIBUART_VERSION;
+#else
+    return LIBUART_VERSION " (git-" TOSTRING(GIT_VERSION) ")";
+#endif
 }
