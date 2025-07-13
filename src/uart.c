@@ -362,7 +362,7 @@ int UART_get_databits(uart_t *uart, int *ret_data_bits)
     return 0;
 }
 
-int UART_set_parity(uart_t *uart, int parity)
+int UART_set_parity(uart_t *uart, enum e_parity parity)
 {
     if (!uart) {
         libuart_error(NULL, __func__, "invalid UART object");

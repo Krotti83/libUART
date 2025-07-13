@@ -155,7 +155,7 @@ extern int UART_get_fd(uart_t *uart, int *ret_fd);
 extern int UART_get_dev(uart_t *uart, char **ret_dev);
 extern int UART_set_databits(uart_t *uart, enum e_data data_bits);
 extern int UART_get_databits(uart_t *uart, int *ret_data_bits);
-extern int UART_set_parity(uart_t *uart, int parity);
+extern int UART_set_parity(uart_t *uart, enum e_parity parity);
 extern int UART_get_parity(uart_t *uart, int *ret_parity);
 extern int UART_set_stopbits(uart_t *uart, enum e_stop stop_bits);
 extern int UART_get_stopbits(uart_t *uart, int *ret_stop_bits);
