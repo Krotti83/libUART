@@ -39,8 +39,9 @@ _BUILD_SRCDIR="."
 _BUILD_DIR="./build"
 _BUILD_CONFIG="config.mk"
 _BUILD_MAKEFILE="Makefile"
-_BUILD_CXX=0
 _BUILD_DOC=0
+_BUILD_STATIC=1
+_BUILD_SHARED=1
 
 _INSTALL_PREFIX=/usr/local
 _INSTALL_INCDIR="$_INSTALL_PREFIX/include"
@@ -70,8 +71,9 @@ cleanup()
     unset _BUILD_DIR
     unset _BUILD_CONFIG
     unset _BUILD_MAKEFILE
-    unset _BUILD_CXX
     unset _BUILD_DOC
+    unset _BUILD_STATIC
+    unset _BUILD_SHARED
     
     unset _INSTALL_PREFIX
     unset _INSTALL_INCDIR
@@ -100,10 +102,12 @@ show_help()
     echo
     echo "Installation directories:"
     echo "  --prefix=PREFIX         install architecture-independent files in PREFIX"
-    echo "                          [$_INSTALL_PREFIX]"
+    echo "                          [default=$_INSTALL_PREFIX]"
     echo
     echo "Optional Features:"
     echo "  --enable-doc            enable building the PDF documentation [default=no]"
+    echo "  --disable-static        disable static library building [default=yes]"
+    echo "  --disable-shared        disable shared library building [default=yes]"
 }
 
 # Check make utility
@@ -271,6 +275,22 @@ generate_config()
         echo "CONFIG_BUILD_DOC = no" >> $_BUILD_DIR/$_BUILD_CONFIG
     fi
 
+    if [ $_BUILD_STATIC -eq 1 ]
+    then
+        echo "CONFIG_BUILD_STATIC = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+    else
+        echo "CONFIG_BUILD_STATIC = no" >> $_BUILD_DIR/$_BUILD_CONFIG
+    fi
+
+    if [ $_BUILD_SHARED -eq 1 ]
+    then
+        echo "CONFIG_BUILD_SHARED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+    else
+        echo "CONFIG_BUILD_SHARED = no" >> $_BUILD_DIR/$_BUILD_CONFIG
+    fi
+
+    echo "CONFIG_GIT_VERSION = $(sh ./scripts/git_version.sh)" >> $_BUILD_DIR/$_BUILD_CONFIG
+
     echo "INSTALL_PREFIX = $_INSTALL_PREFIX" >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "INSTALL_INCDIR = $_INSTALL_INCDIR" >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "INSTALL_LIBDIR = $_INSTALL_LIBDIR" >> $_BUILD_DIR/$_BUILD_CONFIG
@@ -304,6 +324,14 @@ else
             _BUILD_DOC=1
             shift
             ;;
+        --disable-static)
+            _BUILD_STATIC=0
+            shift
+            ;;
+        --disable-shared)
+            _BUILD_SHARED=0
+            shift
+            ;;
         *)
             echo -n "unknown option... "
             echo $1
@@ -325,6 +353,7 @@ check_compiler
 check_make
 check_pdflatex
 generate_config
+echo "execute command make"
 cleanup
 
 exit 0
