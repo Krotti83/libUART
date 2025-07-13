@@ -9,8 +9,8 @@ Header ``libUART``
 
 To use the library include the following header in your source code.
 
-Usage
-~~~~~::
+Usage::
+~~~~~
     #include <UART.h>
 
 Function ``void UART_init(void)``
