@@ -2,12 +2,18 @@
 libUART API (Application Programming Interface)
 ===============================================
 
-libUART header
---------------
+These document describes the application programming interface (API) for the ``libUART`` library.
 
-Include libUART as following to use the library:
+Header ``libUART``
+------------------
 
-``#include <UART.h>`` or ``#include "UART.h"``
+To use the library include the following header in your source code.
+
+.. code-block:: c
+    :caption: The ``UART.h`` header.
+    :linenos:
+    #include <UART.h>
+    #include "UART.h"
 
 Function ``void UART_init(void)``
 ---------------------------------
@@ -29,8 +35,9 @@ None
 
 Usage
 ~~~~~
-
-::
+.. code-block:: c
+    :caption: The ``UART_init()`` function.
+    :linenos:
     UART_init();
 
 Notes
@@ -66,10 +73,12 @@ Returns a valid UART object (handle), or ``NULL`` if an error occurred.
 
 Usage
 ~~~~~
-::
+.. code-block:: c
+    :caption: The ``UART_open()`` function.
+    :linenos:
     uart_t *uart_obj;
 
-    uart_obj = UART_init("/dev/ttyS0", UART_BAUD_115200, "8N1N");
+    uart_obj = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
 
 Function ``void UART_close(uart_t *uart)``
 ------------------------------------------
@@ -91,7 +100,9 @@ None
 
 Usage
 ~~~~~
-::
+.. code-block:: c
+    :caption: The ``UART_init()`` function.
+    :linenos:
     UART_close(uart_obj);
 
 
