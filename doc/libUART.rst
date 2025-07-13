@@ -11,8 +11,9 @@ To use the library include the following header in your source code.
 
 Usage
 ~~~~~
-.. code-block::
-    :linenos:
+
+.. code-block:: c
+
     #include <UART.h>
 
 Function ``void UART_init(void)``
@@ -32,8 +33,9 @@ None
 
 Usage
 ~~~~~
-.. code-block::
-    :linenos:
+
+.. code-block:: c
+
     UART_init();
 
 Notes
@@ -68,8 +70,8 @@ Returns a valid UART object (handle), or ``NULL`` if an error occurred.
 
 Usage
 ~~~~~
-.. code-block::
-    :linenos:
+
+.. code-block:: c
     uart_t *uart_obj;
 
     uart_obj = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
@@ -91,7 +93,7 @@ None
 
 Usage
 ~~~~~
-.. code-block::
+.. code:: c
     :linenos:
     UART_close(uart_obj);
 
