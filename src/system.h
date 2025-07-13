@@ -23,6 +23,8 @@
 #ifndef _LIBUART_SYSTEM_H
 #define _LIBUART_SYSTEM_H
 
+#include <UART.h>
+
 #define DEV_NAME_LEN        256
 
 struct _uart {
@@ -38,20 +40,20 @@ struct _uart {
     int err_msg_len;
 };
 
-extern int uart_baud_valid(int value);
-extern int uart_init_baud(struct _uart *uart);
-extern int uart_init_databits(struct _uart *uart);
-extern int uart_init_parity(struct _uart *uart);
-extern int uart_init_stopbits(struct _uart *uart);
-extern int uart_init_flow(struct _uart *uart);
-extern int uart_init(struct _uart *uart);
-extern int uart_open(struct _uart *uart);
-extern void uart_close(struct _uart *uart);
-extern int uart_send(struct _uart *uart, char *send_buf, int len);
-extern int uart_recv(struct _uart *uart, char *recv_buf, int len);
-extern int uart_flush(struct _uart *uart);
-extern int uart_set_pin(struct _uart *uart, int pin, int state);
-extern int uart_get_pin(struct _uart *uart, int pin, int *state);
-extern int uart_get_bytes(struct _uart *uart, int *bytes);
+extern int _uart_baud_valid(int value);
+extern int _uart_init_baud(struct _uart *uart);
+extern int _uart_init_databits(struct _uart *uart);
+extern int _uart_init_parity(struct _uart *uart);
+extern int _uart_init_stopbits(struct _uart *uart);
+extern int _uart_init_flow(struct _uart *uart);
+extern int _uart_init(struct _uart *uart);
+extern int _uart_open(struct _uart *uart);
+extern void _uart_close(struct _uart *uart);
+extern ssize_t _uart_send(struct _uart *uart, char *send_buf, size_t len);
+extern ssize_t _uart_recv(struct _uart *uart, char *recv_buf, size_t len);
+extern int _uart_flush(struct _uart *uart);
+extern int _uart_set_pin(struct _uart *uart, enum e_pins pin, int state);
+extern int _uart_get_pin(struct _uart *uart, enum e_pins pin, int *state);
+extern int _uart_get_bytes(struct _uart *uart, int *bytes);
 
 #endif

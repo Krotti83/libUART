@@ -147,6 +147,7 @@ extern void UART_close(uart_t *uart);
 extern ssize_t UART_send(uart_t *uart, char *send_buf, size_t len);
 extern ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len);
 extern ssize_t UART_puts(uart_t *uart, char *msg);
+extern int UART_putc(uart_t *uart, char c);
 extern int UART_getc(uart_t *uart, char *ret_c);
 extern int UART_flush(uart_t *uart);
 extern int UART_set_baud(uart_t *uart, enum e_baud baud);

@@ -32,7 +32,7 @@
 
 #define UART_EMSGLEN        256
 
-void libuart_error(struct _uart *uart, const char *func, const char *err_msg)
+void _uart_error(struct _uart *uart, const char *func, const char *err_msg)
 {
     char buf[UART_EMSGLEN];
     

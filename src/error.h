@@ -25,6 +25,6 @@
 
 #include "system.h"
 
-extern void libuart_error(struct _uart *uart, const char *func, const char *err_msg);
+extern void _uart_error(struct _uart *uart, const char *func, const char *err_msg);
 
 #endif

@@ -34,7 +34,7 @@
 
 #include <UART.h>
 
-int uart_baud_valid(int value)
+int _uart_baud_valid(int value)
 {
     int E[] = {
         UART_BAUD_0,
@@ -76,7 +76,7 @@ int uart_baud_valid(int value)
     return 0;
 }
 
-int uart_init_baud(struct _uart *uart)
+int _uart_init_baud(struct _uart *uart)
 {
     int ret;
     struct termios options;
@@ -85,7 +85,7 @@ int uart_init_baud(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcgetattr() failed");
+        _uart_error(uart, __func__, "tcgetattr() failed");
         return -1;
     }
     
@@ -95,7 +95,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -103,7 +103,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -113,7 +113,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -121,7 +121,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -131,7 +131,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -139,7 +139,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -149,7 +149,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -157,7 +157,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -167,7 +167,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -175,7 +175,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -185,7 +185,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -193,7 +193,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -203,7 +203,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -211,7 +211,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -221,7 +221,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -229,7 +229,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -239,7 +239,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -247,7 +247,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -257,7 +257,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -265,7 +265,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -275,7 +275,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -283,7 +283,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -293,7 +293,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -301,7 +301,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -311,7 +311,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -319,7 +319,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -329,7 +329,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -337,7 +337,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -347,7 +347,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -355,7 +355,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -365,7 +365,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -373,7 +373,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -383,7 +383,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -391,7 +391,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -401,7 +401,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -409,7 +409,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
         
@@ -419,7 +419,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -427,7 +427,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -437,7 +437,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -445,7 +445,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -455,7 +455,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -463,7 +463,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -473,7 +473,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -481,7 +481,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -491,7 +491,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -499,7 +499,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -509,7 +509,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -517,7 +517,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -527,7 +527,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -535,7 +535,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -545,7 +545,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -553,7 +553,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -563,7 +563,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -571,7 +571,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -581,7 +581,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -589,7 +589,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -599,7 +599,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -607,7 +607,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -617,7 +617,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -625,7 +625,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
@@ -635,7 +635,7 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetispeed() failed");
+            _uart_error(uart, __func__, "cfsetispeed() failed");
             return -1;
         }
         
@@ -643,14 +643,14 @@ int uart_init_baud(struct _uart *uart)
         
         if (ret == -1) {
             uart->error = UART_ESYSTEM;
-            libuart_error(uart, __func__, "cfsetospeed() failed");
+            _uart_error(uart, __func__, "cfsetospeed() failed");
             return -1;
         }
 
         break;
     default:
         uart->error = UART_EBAUD;
-        libuart_error(uart, __func__, "invalid/unsupported baud rate");
+        _uart_error(uart, __func__, "invalid/unsupported baud rate");
         return -1;
     }
     
@@ -658,7 +658,7 @@ int uart_init_baud(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcsetattr() failed");
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     
@@ -666,7 +666,7 @@ int uart_init_baud(struct _uart *uart)
     return 0;
 }
 
-int uart_init_databits(struct _uart *uart)
+int _uart_init_databits(struct _uart *uart)
 {
     int ret;
     struct termios options;
@@ -675,7 +675,7 @@ int uart_init_databits(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcgetattr() failed");
+        _uart_error(uart, __func__, "tcgetattr() failed");
         return -1;
     }
     
@@ -698,7 +698,7 @@ int uart_init_databits(struct _uart *uart)
         break;
     default:
         uart->error = UART_EDATA;
-        libuart_error(uart, __func__, "invalid/unsupported data bits");
+        _uart_error(uart, __func__, "invalid/unsupported data bits");
         return -1;
     }
     
@@ -706,7 +706,7 @@ int uart_init_databits(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcsetattr() failed");
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     
@@ -714,7 +714,7 @@ int uart_init_databits(struct _uart *uart)
     return 0;
 }
 
-int uart_init_parity(struct _uart *uart)
+int _uart_init_parity(struct _uart *uart)
 {
     int ret;
     struct termios options;
@@ -723,7 +723,7 @@ int uart_init_parity(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcgetattr() failed");
+        _uart_error(uart, __func__, "tcgetattr() failed");
         return -1;
     }
     
@@ -741,7 +741,7 @@ int uart_init_parity(struct _uart *uart)
         break;
     default:
         uart->error = UART_EPARITY;
-        libuart_error(uart, __func__, "invalid/unsupported parity");
+        _uart_error(uart, __func__, "invalid/unsupported parity");
         return -1;
     }
     
@@ -749,7 +749,7 @@ int uart_init_parity(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcsetattr() failed");
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     
@@ -757,7 +757,7 @@ int uart_init_parity(struct _uart *uart)
     return 0;
 }
 
-int uart_init_stopbits(struct _uart *uart)
+int _uart_init_stopbits(struct _uart *uart)
 {
     int ret;
     struct termios options;
@@ -766,7 +766,7 @@ int uart_init_stopbits(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcgetattr() failed");
+        _uart_error(uart, __func__, "tcgetattr() failed");
         return -1;
     }
     
@@ -779,7 +779,7 @@ int uart_init_stopbits(struct _uart *uart)
         break;
     default:
         uart->error = UART_ESTOP;
-        libuart_error(uart, __func__, "invalid/unsupported stop bits");
+        _uart_error(uart, __func__, "invalid/unsupported stop bits");
         return -1;
     }
     
@@ -787,7 +787,7 @@ int uart_init_stopbits(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcsetattr() failed");
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     
@@ -795,7 +795,7 @@ int uart_init_stopbits(struct _uart *uart)
     return 0;
 }
 
-int uart_init_flow(struct _uart *uart)
+int _uart_init_flow(struct _uart *uart)
 {
     int ret;
     struct termios options;
@@ -804,7 +804,7 @@ int uart_init_flow(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcgetattr() failed");
+        _uart_error(uart, __func__, "tcgetattr() failed");
         return -1;
     }
     
@@ -820,7 +820,7 @@ int uart_init_flow(struct _uart *uart)
         break;
     default:
         uart->error = UART_EFLOW;
-        libuart_error(uart, __func__, "invalid/unsupported flow control");
+        _uart_error(uart, __func__, "invalid/unsupported flow control");
         return -1;
     }
     
@@ -828,7 +828,7 @@ int uart_init_flow(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcsetattr() failed");
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     
@@ -836,7 +836,7 @@ int uart_init_flow(struct _uart *uart)
     return 0;
 }
 
-int uart_init(struct _uart *uart)
+int _uart_init(struct _uart *uart)
 {
     int ret;
     struct termios options;
@@ -846,36 +846,36 @@ int uart_init(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "fcntl() failed");
+        _uart_error(uart, __func__, "fcntl() failed");
         return -1;
     }
     
     /* set baud rate */
-    ret = uart_init_baud(uart);
+    ret = _uart_init_baud(uart);
     
     if (ret == -1)
         return -1;
     
     /* set data bits */
-    ret = uart_init_databits(uart);
+    ret = _uart_init_databits(uart);
     
     if (ret == -1)
         return -1;
     
     /* set parity */
-    ret = uart_init_parity(uart);
+    ret = _uart_init_parity(uart);
     
     if (ret == -1)
         return -1;
     
     /* set stop bits */
-    ret = uart_init_stopbits(uart);
+    ret = _uart_init_stopbits(uart);
     
     if (ret == -1)
         return -1;
     
     /* set flow control */
-    ret = uart_init_flow(uart);
+    ret = _uart_init_flow(uart);
     
     if (ret == -1)
         return -1;
@@ -884,7 +884,7 @@ int uart_init(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcgetattr() failed");
+        _uart_error(uart, __func__, "tcgetattr() failed");
         return -1;
     }
     
@@ -905,7 +905,7 @@ int uart_init(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "tcsetattr() failed");
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     
@@ -913,7 +913,7 @@ int uart_init(struct _uart *uart)
     return 0;
 }
 
-int uart_open(struct _uart *uart)
+int _uart_open(struct _uart *uart)
 {
     int ret;
     int fd;
@@ -922,12 +922,12 @@ int uart_open(struct _uart *uart)
     
     if (fd == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "open() failed");
+        _uart_error(uart, __func__, "open() failed");
         return -1;
     }
     
     uart->fd = fd;
-    ret = uart_init(uart);
+    ret = _uart_init(uart);
     
     if (ret == -1) {
         close(fd);
@@ -938,29 +938,26 @@ int uart_open(struct _uart *uart)
     return 0;
 }
 
-void uart_close(struct _uart *uart)
+void _uart_close(struct _uart *uart)
 {
     close(uart->fd);
-    free(uart);
-    uart = NULL;
-    uart->error = UART_ESUCCESS;
 }
 
-int uart_send(struct _uart *uart, char *send_buf, int len)
+ssize_t _uart_send(struct _uart *uart, char *send_buf, size_t len)
 {
-    int ret;
+    ssize_t ret;
     
     ret = write(uart->fd, send_buf, len);
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "write() failed");
+        _uart_error(uart, __func__, "write() failed");
         return -1;
     }
     
-    if (ret != len) {
+    if (ret != (ssize_t) len) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "write() could not write all data");
+        _uart_error(uart, __func__, "write() could not write all data");
         return ret;
     }
     
@@ -968,23 +965,24 @@ int uart_send(struct _uart *uart, char *send_buf, int len)
     return ret;
 }
 
-int uart_recv(struct _uart *uart, char *recv_buf, int len)
+ssize_t _uart_recv(struct _uart *uart, char *recv_buf, size_t len)
 {
-    int ret = 0;
+    ssize_t ret = 0;
     
     ret = read(uart->fd, recv_buf, len);
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "read() failed");
+        _uart_error(uart, __func__, "read() failed");
         return -1;
     }
     
     uart->error = UART_ESUCCESS;
+
     return ret;
 }
 
-int uart_flush(struct _uart *uart)
+int _uart_flush(struct _uart *uart)
 {
     int ret = 0;
     
@@ -992,7 +990,7 @@ int uart_flush(struct _uart *uart)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "fsync() failed");
+        _uart_error(uart, __func__, "fsync() failed");
         return -1;
     }
     
@@ -1000,7 +998,7 @@ int uart_flush(struct _uart *uart)
     return 0;
 }
 
-int uart_set_pin(struct _uart *uart, int pin, int state)
+int _uart_set_pin(struct _uart *uart, enum e_pins pin, int state)
 {
     int ret;
     int status;
@@ -1009,7 +1007,7 @@ int uart_set_pin(struct _uart *uart, int pin, int state)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "ioctl() failed");
+        _uart_error(uart, __func__, "ioctl() failed");
         return -1;
     }
     
@@ -1028,7 +1026,7 @@ int uart_set_pin(struct _uart *uart, int pin, int state)
         break;
     default:
         uart->error = UART_EPIN;
-        libuart_error(uart, __func__, "invalid pin");
+        _uart_error(uart, __func__, "invalid pin");
         return -1;
     }
     
@@ -1036,7 +1034,7 @@ int uart_set_pin(struct _uart *uart, int pin, int state)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "ioctl() failed");
+        _uart_error(uart, __func__, "ioctl() failed");
         return -1;
     }
     
@@ -1044,7 +1042,7 @@ int uart_set_pin(struct _uart *uart, int pin, int state)
     return 0;
 }
 
-int uart_get_pin(struct _uart *uart, int pin, int *state)
+int _uart_get_pin(struct _uart *uart, enum e_pins pin, int *state)
 {
     int ret = 0;
     int status;
@@ -1053,7 +1051,7 @@ int uart_get_pin(struct _uart *uart, int pin, int *state)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "ioctl() failed");
+        _uart_error(uart, __func__, "ioctl() failed");
         return -1;
     }
     
@@ -1084,7 +1082,7 @@ int uart_get_pin(struct _uart *uart, int pin, int *state)
         break;
     default:
         uart->error = UART_EPIN;
-        libuart_error(uart, __func__, "invalid pin");
+        _uart_error(uart, __func__, "invalid pin");
         return -1;
     }
     
@@ -1093,7 +1091,7 @@ int uart_get_pin(struct _uart *uart, int pin, int *state)
     return 0;
 }
 
-int uart_get_bytes(struct _uart *uart, int *bytes)
+int _uart_get_bytes(struct _uart *uart, int *bytes)
 {
     int ret = 0;
     
@@ -1101,7 +1099,7 @@ int uart_get_bytes(struct _uart *uart, int *bytes)
     
     if (ret == -1) {
         uart->error = UART_ESYSTEM;
-        libuart_error(uart, __func__, "ioctl() failed");
+        _uart_error(uart, __func__, "ioctl() failed");
         return -1;
     }
     
