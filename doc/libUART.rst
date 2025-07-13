@@ -9,8 +9,10 @@ Header ``libUART``
 
 To use the library include the following header in your source code.
 
-Usage::
+Usage
 ~~~~~
+.. code-block::
+    :linenos:
     #include <UART.h>
 
 Function ``void UART_init(void)``
@@ -28,7 +30,10 @@ Returns
 ~~~~~~~
 None
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_init();
 
 Notes
@@ -61,7 +66,10 @@ Returns
 ~~~~~~~
 Returns a valid UART object (handle), or ``NULL`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     uart_t *uart_obj;
 
     uart_obj = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
@@ -81,7 +89,10 @@ Returns
 ~~~~~~~
 None
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_close(uart_obj);
 
 Function ``ssize_t UART_send(uart_t *uart, char *send_buf, size_t len)``
@@ -101,7 +112,10 @@ Returns
 ~~~~~~~
 Returns number of sent bytes, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_send(uart_obj, buf, 256);
 
 Function ``ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len)``
@@ -121,7 +135,10 @@ Returns
 ~~~~~~~
 Returns number of received bytes, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_recv(uart_obj, buf, 256);
 
 Function ``ssize_t UART_puts(uart_t *uart, char *msg)``
@@ -140,7 +157,10 @@ Returns
 ~~~~~~~
 Returns number of sent bytes, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_puts(uart_obj, buf, 256);
 
 Function ``int UART_putc(uart_t *uart, char c)``
@@ -159,7 +179,10 @@ Returns
 ~~~~~~~
 Returns number of sent bytes, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_putc(uart_obj, 'A');
 
 Function ``int UART_getc(uart_t *uart, char *ret_c)``
@@ -178,7 +201,10 @@ Returns
 ~~~~~~~
 Returns number of received bytes, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     char c;
 
     UART_getc(uart_obj, &c);
@@ -198,7 +224,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_flush(uart_obj);
 
 Function ``int UART_set_baud(uart_t *uart, enum e_baud baud)``
@@ -217,7 +246,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_set_baud(uart_obj, UART_BAUD_115200);
 
 Function ``int UART_get_baud(uart_t *uart, int *ret_baud)``
@@ -236,7 +268,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int baud;
 
     UART_get_baud(uart_obj, &baud);
@@ -257,7 +292,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int fd;
 
     UART_get_fd(uart_obj, &fd);
@@ -278,7 +316,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int *dev;
 
     UART_get_dev(uart_obj, &dev);
@@ -304,7 +345,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_set_databits(uart_obj, UART_BAUD_115200);
 
 Function ``int UART_get_databits(uart_t *uart, int *ret_data_bits)``
@@ -323,7 +367,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int data;
 
     UART_get_databits(uart_obj, &data);
@@ -347,7 +394,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_set_parity(uart_obj, UART_PARITY_NONE);
 
 Function ``int UART_get_parity(uart_t *uart, int *ret_parity)``
@@ -367,7 +417,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int parity;
 
     UART_get_parity(uart_obj, &parity);
@@ -391,7 +444,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_set_stopbits(uart_obj, UART_STOP_1_0);
 
 Function ``int UART_get_stopbits(uart_t *uart, int *ret_stop_bits)``
@@ -410,7 +466,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int stop;
 
     UART_get_stopbits(uart_obj, &stop);
@@ -434,7 +493,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     UART_set_flowctrl(uart_obj, UART_FLOW_NO);
 
 Function ``int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl)``
@@ -453,7 +515,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int flow;
 
     UART_get_flowctrl(uart_obj, &flow);
@@ -480,7 +545,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int state;
 
     UART_set_pin(uart_obj, UART_PIN_RTS, UART_PIN_HIGH);
@@ -511,7 +579,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int state;
 
     UART_get_pin(uart_obj, UART_PIN_CTS, &state);
@@ -532,7 +603,10 @@ Returns
 ~~~~~~~
 Returns ``0`` on success, or ``-1`` if an error occurred.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     int bytes;
 
     UART_get_bytes_available(uart_obj, &bytes);
@@ -563,7 +637,10 @@ Returns
 ~~~~~~~
 Returns the library name string.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     printf("%s", UART_get_libname());
 
 Function ``char *UART_get_libversion(void)``
@@ -581,5 +658,8 @@ Returns
 ~~~~~~~
 Returns the library version string.
 
-Usage::
+Usage
+~~~~~
+.. code-block::
+    :linenos:
     printf("%s", UART_get_libversion());
