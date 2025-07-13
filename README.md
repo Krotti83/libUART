@@ -113,6 +113,4 @@ $ gcc -I build -o test test.c build/libUART.so
 ## Documentation
 
 The documentation is currently not completed, but will finalize this later too. The current
-API (Application Programming Interface) can be found under:
-
-[![API](https://github.com/Krotti83/libUART/blob/main/doc/libUART.rst)]
+API (Application Programming Interface) can be found [![here](https://github.com/Krotti83/libUART/blob/main/doc/libUART.rst)].
