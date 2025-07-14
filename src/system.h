@@ -23,12 +23,21 @@
 #ifndef _LIBUART_SYSTEM_H
 #define _LIBUART_SYSTEM_H
 
+#ifdef _WIN32
+#include "Windows.h"
+#endif
+
 #include <UART.h>
 
 #define DEV_NAME_LEN        256
 
 struct _uart {
+#ifdef __unix__
     int fd;
+#elif _WIN32
+    HANDLE h;
+    COMMPROP prop;
+#endif
     char dev[DEV_NAME_LEN];
     int baud;
     int data_bits;

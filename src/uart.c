@@ -309,6 +309,7 @@ int UART_get_baud(uart_t *uart, int *ret_baud)
     return 0;
 }
 
+#ifdef __unix__
 int UART_get_fd(uart_t *uart, int *ret_fd)
 {
     if (!uart) {
@@ -326,6 +327,24 @@ int UART_get_fd(uart_t *uart, int *ret_fd)
 
     return 0;
 }
+#elif _WIN32
+int UART_get_handle(uart_t *uart, HANDLE *ret_h)
+{
+    if (!uart) {
+        _uart_error(NULL, __func__, "invalid UART object");
+        return -1;
+    }
+
+    if (!ret_h) {
+        uart->error = UART_EINVAL;
+        _uart_error(NULL, __func__, "invalid HANDLE");
+        return -1;
+    }
+
+    (*ret_h) = uart->h;
+    return 0;
+}
+#endif
 
 int UART_get_dev(uart_t *uart, char **ret_dev)
 {
