@@ -1,9 +1,10 @@
-\documentclass[10pt, a4paper]{report}
+\documentclass{report}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
 \usepackage{textcomp}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{listings}
-\usepackage{color}
+\usepackage{xcolor}
 \lstset{
     language={[ansi]C},
     basicstyle=\small\sffamily,
@@ -15,13 +16,13 @@
     showstringspaces=false,
     showtabs=false,
     keepspaces,
-    commentstyle=\color{red},
+    commentstyle=\color{green},
     keywordstyle=\color{blue},
-    numberstyle=\color{red},
+    numberstyle=\color{orange},
     stringstyle=\color{red},
-    identifierstyle=\color{red}
+    identifierstyle=\bfseries{\color{black}}
 }
-\title{libUART - Easy to use UART library \\ Programming Guide v0.1}
+\title{libUART - Easy to use UART library \\ Programming Guide v0.1.0.x (rev. 0)}
 \author{Johannes Krottmayer}
 \begin{document}
 \maketitle
@@ -46,4 +47,946 @@ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
 WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+\chapter{Application Programming Interface (API)}
+\section{Header}
+For communicating with the library include the following header. It
+contains all necessary prototypes and data types like elementary types
+and enumerations which are required for the library.
+\begin{lstlisting}
+#include <UART.h>
+\end{lstlisting}
+\section{Basic Functions}
+This section contains basic functions for working with the library, such
+as initialization of the library and opening and closing from an \textbf{UART}
+interface.
+\subsection{UART\_init() Function}
+The \textit{UART\_init() function} initializes the \textbf{UART} library.
+This function should always called first before usage of any other
+functions with the library.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+void UART_init(void);
+\end{lstlisting}
+\subsubsection*{Arguments}
+None
+\subsubsection*{Returns}
+None
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_init();
+\end{lstlisting}
+\subsection{UART\_open() Function}
+The \textit{UART\_open() function} opens an \textbf{UART} interface for
+the specific device and configure the \textbf{UART} connection.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item Device path and name
+\begin{description}
+\item[NOTE:] The device name for the \textbf{UART} under the directory
+\textit{/dev}. Examples are \textit{/dev/ttyS0} or if the \textbf{UART}
+interface is controlled via an \textbf{USB} interface then \textit{/dev/ttyUSB0}.
+\end{description}
+\item Baud rate
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Available Baud Rates} \\
+\hline
+Enumeration & Baud rate \\
+\hline
+UART\_BAUD\_0 & 0 \\
+UART\_BAUD\_5 & 5 \\
+UART\_BAUD\_75 & 75 \\
+UART\_BAUD\_110 & 110 \\
+UART\_BAUD\_134 & 134 \\
+UART\_BAUD\_150 & 150 \\
+UART\_BAUD\_200 & 200 \\
+UART\_BAUD\_300 & 300 \\
+UART\_BAUD\_600 & 600 \\
+UART\_BAUD\_1200 & 1200 \\
+UART\_BAUD\_1800 & 1800 \\
+UART\_BAUD\_2400 & 2400 \\
+UART\_BAUD\_4800 & 4800 \\
+UART\_BAUD\_9600 & 9600 \\
+UART\_BAUD\_19200 & 19200 \\
+UART\_BAUD\_38400 & 38400 \\
+UART\_BAUD\_57600 & 57600 \\
+UART\_BAUD\_115200 & 115200 \\
+UART\_BAUD\_230400 & 230400 \\
+UART\_BAUD\_460800 & 460800 \\
+UART\_BAUD\_500000 & 500000 \\
+UART\_BAUD\_576000 & 576000 \\
+UART\_BAUD\_921600 & 921600 \\
+UART\_BAUD\_1000000 & 1000000 \\
+UART\_BAUD\_1152000 & 1152000 \\
+UART\_BAUD\_1500000 & 1500000 \\
+UART\_BAUD\_2000000 & 2000000 \\
+UART\_BAUD\_2500000 & 2500000 \\
+UART\_BAUD\_3000000 & 3000000 \\
+UART\_BAUD\_3500000 & 3500000 \\
+UART\_BAUD\_4000000 & 4000000 \\
+\hline
+\end{tabular}
+\item Option string
+\begin{description}
+\item[NOTE:] The option string should contain the number of data bits,
+the parity, the number of stop bits and the flow control.
+\end{description}
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Data Bits} \\
+\hline
+Value & Number of Data Bits \\
+\hline
+5 & 5 bits \\
+6 & 6 bits \\
+7 & 7 bits \\
+8 & 8 bits \\
+\hline
+\end{tabular}
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Parities} \\
+\hline
+Value & Parity \\
+\hline
+N & None \\
+O & Odd \\
+E & Even \\
+& \\
+\hline
+\end{tabular}
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Stop Bits} \\
+\hline
+Value & Stop Bits \\
+\hline
+1 & 1 Stop bit \\
+2 & 2 Stop bits \\
+& \\
+& \\
+\hline
+\end{tabular}
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Flow Control} \\
+\hline
+Value & Flow Control \\
+\hline
+N & None \\
+S & Software \\
+H & Hardware \\
+& \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns a valid UART object/handle if success, or \textbf{NULL} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+uart_t *uart;
+
+uart = UART_open("/dev/ttyUSB0", "8N1N");
+\end{lstlisting}
+\subsection{UART\_close() Function}
+The \textit{UART\_close() function} closes the \textbf{UART} interface and
+frees the underlying \textbf{UART} object.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+void UART_close(uart_t *uart);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\end{enumerate}
+\subsubsection*{Returns}
+None
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+uart_t *uart;
+
+UART_close(uart);
+\end{lstlisting}
+\section{Basic Input/Output Functions}
+This section contains elementary input/output functions such as
+sending and/or receiving data over the \textbf{UART} interface.
+\subsection{UART\_send() Function}
+The \textit{UART\_send() function} sends a specific amount of
+data over the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+ssize_t UART_send(uart_t *uart, char *send_buf, size_t len);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to buffer where the data is stored
+\item Number of elements in the buffer (bytes to send)
+\end{enumerate}
+\subsubsection*{Returns}
+Returns the number of sent data (bytes), or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+uart_t *uart;
+char buf[256];
+
+UART_send(uart, buf, 256);
+\end{lstlisting}
+\subsection{UART\_recv() Function}
+The \textit{UART\_recv() function} receives a specific amount of
+data over the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to buffer where the received data should be stored
+\item Number of elements (bytes) to receive
+\end{enumerate}
+\subsubsection*{Returns}
+Returns the number of received data (bytes), or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+uart_t *uart;
+char buf[256];
+
+UART_recv(uart, buf, 256);
+\end{lstlisting}
+\section{Input/Output Functions}
+This section contains generic input/output functions such as
+sending strings and characters and receiving characters over
+the \textbf{UART} interface.
+\subsection{UART\_puts() Function}
+The \textit{UART\_puts() function} sends a string over the
+\textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+ssize_t UART_puts(uart_t *uart, char *msg);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to the string which should be send
+\end{enumerate}
+\subsubsection*{Returns}
+Returns the number of sent data (in bytes), or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_puts(uart, "Hello World!\r\n");
+\end{lstlisting}
+\subsection{UART\_putc() Function}
+The \textit{UART\_putc() function} send a single character over
+the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_putc(uart_t *uart, char c);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Character to send
+\end{enumerate}
+\subsubsection*{Returns}
+Returns the number of sent data (in bytes), or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_putc(uart, 'A');
+\end{lstlisting}
+\subsection{UART\_getc() Function}
+The \textit{UART\_getc() function} receives a single character
+over the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_getc(uart_t *uart, char *ret_c);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to character
+\end{enumerate}
+\subsubsection*{Returns}
+Returns the number of received data (in bytes), or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+char c;
+
+UART_getc(uart, &c);
+\end{lstlisting}
+\subsection{UART\_flush() Function}
+The \textit{UART\_flush() function} flushes not sent data (which
+resides in the internal buffers) from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_flush(uart_t *uart);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_flush(uart);
+\end{lstlisting}
+\subsection{UART\_set\_pin() Function}
+The \textit{UART\_set\_pin() function} changes the pin state for a
+specific \textbf{UART} pin from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_set_pin(uart_t *uart, enum e_pins pin, int state);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item UART pin Enumeration
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid UART Pins} \\
+\hline
+Enumeration & Direction \\
+\hline
+UART\_PIN\_RTS & Output \\
+UART\_PIN\_DTR & Output \\
+\hline
+\end{tabular}
+\item UART Pin State
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid UART Pin States} \\
+\hline
+Value & Logic Level \\
+\hline
+UART\_PIN\_LOW & Low (0) \\
+UART\_PIN\_HIGH & High (1) \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_set_pin(uart, UART_PIN_RTS, UART_PIN_HIGH);
+\end{lstlisting}
+\subsection{UART\_get\_pin() Function}
+The \textit{UART\_get\_pin() function} reads out the pin state for a
+specific \textbf{UART} pin from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_pin(uart_t *uart, enum e_pins pin, int *ret_state);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item UART pin Enumeration
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid UART Pins} \\
+\hline
+Enumeration & Direction \\
+\hline
+UART\_PIN\_CTS & Input \\
+UART\_PIN\_DSR & Input \\
+UART\_PIN\_DCD & Input \\
+UART\_PIN\_RI & Input \\
+\hline
+\end{tabular}
+\item Pointer to pin state
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int state;
+
+UART_get_pin(uart, UART_PIN_CTS, &state);
+\end{lstlisting}
+\section{Configuration Functions}
+This section contains generic Configuration functions such as
+setting the baud rate and other useful Configuration for the
+\textbf{UART} interface.
+\subsection{UART\_set\_baud() Function}
+The \textit{UART\_set\_baud() function} configures the baud rate
+from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_set_baud(uart_t *uart, enum e_baud baud);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Baud rate
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Available Baud Rates} \\
+\hline
+Enumeration & Baud rate \\
+\hline
+UART\_BAUD\_0 & 0 \\
+UART\_BAUD\_5 & 5 \\
+UART\_BAUD\_75 & 75 \\
+UART\_BAUD\_110 & 110 \\
+UART\_BAUD\_134 & 134 \\
+UART\_BAUD\_150 & 150 \\
+UART\_BAUD\_200 & 200 \\
+UART\_BAUD\_300 & 300 \\
+UART\_BAUD\_600 & 600 \\
+UART\_BAUD\_1200 & 1200 \\
+UART\_BAUD\_1800 & 1800 \\
+UART\_BAUD\_2400 & 2400 \\
+UART\_BAUD\_4800 & 4800 \\
+UART\_BAUD\_9600 & 9600 \\
+UART\_BAUD\_19200 & 19200 \\
+UART\_BAUD\_38400 & 38400 \\
+UART\_BAUD\_57600 & 57600 \\
+UART\_BAUD\_115200 & 115200 \\
+UART\_BAUD\_230400 & 230400 \\
+UART\_BAUD\_460800 & 460800 \\
+UART\_BAUD\_500000 & 500000 \\
+UART\_BAUD\_576000 & 576000 \\
+UART\_BAUD\_921600 & 921600 \\
+UART\_BAUD\_1000000 & 1000000 \\
+UART\_BAUD\_1152000 & 1152000 \\
+UART\_BAUD\_1500000 & 1500000 \\
+UART\_BAUD\_2000000 & 2000000 \\
+UART\_BAUD\_2500000 & 2500000 \\
+UART\_BAUD\_3000000 & 3000000 \\
+UART\_BAUD\_3500000 & 3500000 \\
+UART\_BAUD\_4000000 & 4000000 \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_set_baud(uart, UART_BAUD_115200);
+\end{lstlisting}
+\subsection{UART\_get\_baud() Function}
+The \textit{UART\_get\_baud() function} returns the baud rate
+from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_baud(uart_t *uart, int *ret_baud);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to baud rate
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int baud;
+
+UART_get_baud(uart, &baud);
+\end{lstlisting}
+\subsection{UART\_set\_databits() Function}
+The \textit{UART\_set\_databits() function} configures the number
+of data bits from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_set_databits(uart_t *uart, enum e_data data_bits);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Data Bits Enumeration
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Data Bits} \\
+\hline
+Enumeration & Number of Data Bits \\
+\hline
+UART\_DATA\_5 & 5 bits \\
+UART\_DATA\_6 & 6 bits \\
+UART\_DATA\_7 & 7 bits \\
+UART\_DATA\_8 & 8 bits \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_set_databits(uart, UART_DATA_8);
+\end{lstlisting}
+\subsection{UART\_get\_databits() Function}
+The \textit{UART\_set\_databits() function} returns the number
+of data bits from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_databits(uart_t *uart, int *ret_data_bits);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to data bits
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int data;
+
+UART_get_databits(uart, &data);
+\end{lstlisting}
+\subsection{UART\_set\_parity() Function}
+The \textit{UART\_set\_parity() function} configures the parity
+from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_set_parity(uart_t *uart, enum e_parity parity);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Parity Enumeration
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Parities} \\
+\hline
+Enumeration & Parity \\
+\hline
+UART\_PARITY\_NONE & None \\
+UART\_PARITY\_ODD & Odd \\
+UART\_PARITY\_EVEN & Even \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_set_parity(uart, UART_PARITY_NONE);
+\end{lstlisting}
+\subsection{UART\_get\_parity() Function}
+The \textit{UART\_get\_parity() function} returns the parity
+from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_parity(uart_t *uart, int *ret_parity);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to parity
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int parity;
+
+UART_get_parity(uart, &parity);
+\end{lstlisting}
+\subsection{UART\_set\_stopbits() Function}
+The \textit{UART\_set\_stopbits() function} configures the number
+of stop bits from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_set_stopbits(uart_t *uart, enum e_stop stop_bits);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Stop bits Enumeration
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Stop Bits} \\
+\hline
+Enumeration & Stop Bits \\
+\hline
+UART\_STOP\_1\_0 & 1 Bit \\
+UART\_STOP\_2\_0 & 2 Bits \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_set_stopbits(uart, UART_STOP_1_0);
+\end{lstlisting}
+\subsection{UART\_get\_stopbits() Function}
+The \textit{UART\_get\_stopbits() function} configures the number
+of stop bits from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_stopbits(uart_t *uart, int *ret_stop_bits);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to stop bits
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int stop;
+
+UART_get_stopbits(uart, &stop);
+\end{lstlisting}
+\subsection{UART\_set\_flowctrl() Function}
+The \textit{UART\_set\_flowctrl() function} configures the flow
+control from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_set_flowctrl(uart_t *uart, enum e_flow flow_ctrl);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Flow control Enumeration
+\newline
+\newline
+\begin{tabular}{| c | c |}
+\hline
+\multicolumn{2}{|c|}{Valid Flow Control} \\
+\hline
+Enumeration & Flow Control \\
+\hline
+UART\_FLOW\_NO & None \\
+UART\_FLOW\_SW & Software \\
+UART\_FLOW\_HW & Hardware \\
+\hline
+\end{tabular}
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+UART_UART_set_flowctrl(uart, UART_FLOW_NO);
+\end{lstlisting}
+\subsection{UART\_get\_flowctrl() Function}
+The \textit{UART\_get\_flowctrl() function} return the flow
+control from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to flow control
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int flow;
+
+UART_get_flowctrl(uart, &flow);
+\end{lstlisting}
+\subsection{UART\_get\_fd() Function}
+The \textit{UART\_get\_dev() function} returns the file
+descriptor from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_fd(uart_t *uart, int *ret_fd);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to file descriptor
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int fd;
+
+UART_get_fd(uart, &fd);
+\end{lstlisting}
+\subsection{UART\_get\_dev() Function}
+The \textit{UART\_get\_dev() function} returns the device
+name from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_dev(uart_t *uart, char **ret_dev);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to device name
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+char *dev;
+
+UART_get_dev(uart, &dev);
+\end{lstlisting}
+\section{Miscellaneous Functions}
+This section contains generic miscellaneous functions such as
+getting the bytes available on the receiver from the \textbf{UART}
+interface and the information according the library like the
+library name and the library version.
+\subsection{UART\_get\_bytes\_available() Function}
+The \textit{UART\_get\_bytes\_available() function} returns the number of
+bytes available in the receive channel.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+int UART_get_bytes_available(uart_t *uart, int *ret_num);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to bytes
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+int bytes;
+
+UART_get_bytes_available(uart, &bytes);
+\end{lstlisting}
+\subsection{UART\_get\_libname() Function}
+The \textit{UART\_get\_libname() function} returns the library
+name string.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+char *UART_get_libname(void);
+\end{lstlisting}
+\subsubsection*{Arguments}
+None
+\subsubsection*{Returns}
+Returns the library name string.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+printf("%s", UART_get_libname());
+\end{lstlisting}
+\subsection{UART\_get\_libversion() Function}
+The \textit{UART\_get\_libversion() function} returns the library
+version string.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <UART.h>
+
+char *UART_get_libversion(void);
+\end{lstlisting}
+\subsubsection*{Arguments}
+None
+\subsubsection*{Returns}
+Returns the library version string.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <UART.h>
+
+printf("%s", UART_get_libversion());
+\end{lstlisting}
 \end{document}
