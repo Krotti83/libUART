@@ -25,6 +25,15 @@
 
 #include <stddef.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#ifdef LIBUART_EXPORTS
+#define LIBUART_API __declspec(dllexport)
+#else
+#define LIBUART_API __declspec(dllimport)
+#endif
+#endif
+
 #ifndef _LIBUART_SSIZE_T
 #define _LIBUART_SSIZE_T
 typedef long int ssize_t;
@@ -141,6 +150,7 @@ enum e_pins {
 #define UART_PIN_LOW        0
 #define UART_PIN_HIGH       1
 
+#ifdef __unix__
 extern void UART_init(void);
 extern uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt);
 extern void UART_close(uart_t *uart);
@@ -168,5 +178,34 @@ extern int UART_get_bytes_available(uart_t *uart, int *ret_num);
 extern void UART_set_errmsg(int msg_enable);
 extern char *UART_get_libname(void);
 extern char *UART_get_libversion(void);
+#elif _WIN32
+extern LIBUART_API void UART_init(void);
+extern LIBUART_API uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt);
+extern LIBUART_API void UART_close(uart_t *uart);
+extern LIBUART_API ssize_t UART_send(uart_t *uart, char *send_buf, size_t len);
+extern LIBUART_API ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len);
+extern LIBUART_API ssize_t UART_puts(uart_t *uart, char *msg);
+extern LIBUART_API int UART_putc(uart_t *uart, char c);
+extern LIBUART_API int UART_getc(uart_t *uart, char *ret_c);
+extern LIBUART_API int UART_flush(uart_t *uart);
+extern LIBUART_API int UART_set_baud(uart_t *uart, enum e_baud baud);
+extern LIBUART_API int UART_get_baud(uart_t *uart, int *ret_baud);
+extern LIBUART_API int UART_get_fd(uart_t *uart, int *ret_fd);
+extern LIBUART_API int UART_get_dev(uart_t *uart, char **ret_dev);
+extern LIBUART_API int UART_set_databits(uart_t *uart, enum e_data data_bits);
+extern LIBUART_API int UART_get_databits(uart_t *uart, int *ret_data_bits);
+extern LIBUART_API int UART_set_parity(uart_t *uart, enum e_parity parity);
+extern LIBUART_API int UART_get_parity(uart_t *uart, int *ret_parity);
+extern LIBUART_API int UART_set_stopbits(uart_t *uart, enum e_stop stop_bits);
+extern LIBUART_API int UART_get_stopbits(uart_t *uart, int *ret_stop_bits);
+extern LIBUART_API int UART_set_flowctrl(uart_t *uart, enum e_flow flow_ctrl);
+extern LIBUART_API int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl);
+extern LIBUART_API int UART_set_pin(uart_t *uart, enum e_pins pin, int state);
+extern LIBUART_API int UART_get_pin(uart_t *uart, enum e_pins pin, int *ret_state);
+extern LIBUART_API int UART_get_bytes_available(uart_t *uart, int *ret_num);
+extern LIBUART_API void UART_set_errmsg(int msg_enable);
+extern LIBUART_API char *UART_get_libname(void);
+extern LIBUART_API char *UART_get_libversion(void);
+#endif
 
 #endif
