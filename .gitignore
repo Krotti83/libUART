@@ -40,13 +40,14 @@ GIT_tag.txt
 *.elf
 *.map
 *.a
+*.so
+*.so*
+*.dll
 
 # Build output directory
 build
 
 # Object files
-*.so
-*.so*
 *.o
 
 # LaTeX documentation temporary files
