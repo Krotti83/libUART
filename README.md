@@ -56,7 +56,7 @@ The created files can be found in the ``build`` directory. The following files w
 
 To build the library with PDF documentation generation, pass the option ``--enable-doc`` to the
 ``configure`` script. The ``configure`` also checks if the required application ``pdflatex`` is
-installed for building the PDF documentation too.
+installed for building the PDF documentation.
 
 
 ```
@@ -77,7 +77,7 @@ The created files can be found in the ``build`` directory. The following files w
 
 ### Build for Windows on Linux
 
-To cross building on **Linux** for **Windows** use the pass the option ``--target=windows`` to
+For cross building on **Linux** for **Windows** pass the option ``--target=windows`` to
 the ``configure`` script.
 
 ```
