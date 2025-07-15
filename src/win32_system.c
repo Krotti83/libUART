@@ -23,7 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <Windows.h>
+
+#include <windows.h>
 
 #include "error.h"
 #include "version.h"
@@ -294,7 +295,7 @@ int _uart_init_parity(struct _uart *uart)
     }
     
     switch (uart->parity) {
-    case UART_PARITY_NO:
+    case UART_PARITY_NONE:
         if (!(uart->prop.wSettableStopParity & WIN_PARITY_NONE)) {
             uart->error = UART_EPARITY;
             _uart_error(uart, __func__, "Hardware/Driver doesn't support none parity");
@@ -558,7 +559,7 @@ ssize_t _uart_send(struct _uart *uart, char *send_buf, size_t len)
     
     ret = (int) dwbyteswritten;
     
-    if (ret != len) {
+    if (ret != (int) len) {
         uart->error = UART_ESYSTEM;
         _uart_error(uart, __func__, "WriteFile() could not write all data");
         return (ssize_t) ret;
@@ -608,7 +609,7 @@ int _uart_flush(struct _uart *uart)
     return 0;
 }
 
-int _uart_set_pin(struct _uart *uart, int pin, int state)
+int _uart_set_pin(struct _uart *uart, enum e_pins pin, int state)
 {
     int ret;
     DWORD dwfunc;
@@ -644,7 +645,7 @@ int _uart_set_pin(struct _uart *uart, int pin, int state)
     return 0;
 }
 
-int _uart_get_pin(struct _uart *uart, int pin, int *state)
+int _uart_get_pin(struct _uart *uart, enum e_pins pin, int *state)
 {
     int ret = 0;
     DWORD dwmstat;
