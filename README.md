@@ -5,7 +5,8 @@
 Easy to use library for accessing the **UART** (serial interface). The library use the **POSIX**
 functions ``termios`` on **Linux**. It should also possible to use the library on ***BSD**
 systems too, but currently not tested. In the ``UART_open()`` function the library setups
-the **UART** in *raw* and *none-blocking* mode currently.
+the **UART** in *raw* and *none-blocking* mode currently. On **Windows** the **UART** library
+doesn't use a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``.
 
 ## NOTES
 
@@ -15,19 +16,20 @@ which are provided for the library are fully usable.
 ## Supported operating systems
 
 * **Linux** (or all **POSIX** compatible systems)
+* **Windows** (cross building through **MINGW**)
 
 ## TODO
 
-* Add support for clang compiler
 * Add threading support
-* Add Windows support
+* Add **Visual Studio** support (currently only cross building through **MINGW** is supported)
 * Fully complete documentation
 
 ## Prerequisites for building the library
 
 * GNU make
-* GNU binutils
-* GCC (currently only building with GCC is supported)
+* GNU binutils or LLVM binutils
+* GCC or LLVM clang
+* GCC for Windows if cross building for Windows on Linux
 * pdflatex (only required if the PDF documentation should be build too)
 
 ## Building the library
@@ -51,6 +53,25 @@ installed for building the PDF documentation too.
 $ ./configure --enable-doc
 $ make
 ```
+
+### Build for Windows on Linux
+
+To cross building on **Linux** for **Windows** use the pass the option ``--target=windows`` to
+the ``configure`` script.
+
+```
+$ ./configure --target=windows
+$ make
+```
+
+#### Output Files
+
+The created files can be found in the build directory. The following files will be created:
+
+* ``UART.h``
+* ``libUART.dll``
+* ``libUART.lib``
+* ``libUART.pdf`` if building with option ``--enable-doc``
 
 ## Install the library on your system
 
