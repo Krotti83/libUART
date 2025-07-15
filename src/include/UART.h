@@ -26,7 +26,7 @@
 #include <stddef.h>
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #ifdef LIBUART_EXPORTS
 #define LIBUART_API __declspec(dllexport)
 #else
@@ -34,9 +34,11 @@
 #endif
 #endif
 
+#ifndef _WIN32
 #ifndef _LIBUART_SSIZE_T
 #define _LIBUART_SSIZE_T
 typedef long int ssize_t;
+#endif
 #endif
 
 /* UART error codes */
