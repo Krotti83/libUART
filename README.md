@@ -42,6 +42,16 @@ still available in under ``doc/libUART.rst``. Only the **LaTeX** document will n
 $ ./configure
 $ make
 ```
+#### Output Files
+
+The created files can be found in the ``build`` directory. The following files will be created:
+
+* ``UART.h``
+* ``libUART.so`` (Symbolic link to ``libUART.so.0``)
+* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.1``)
+* ``libUART.so.0.1``
+* ``libUART.a``
+
 ### Build with documentation
 
 To build the library with PDF documentation generation, pass the option ``--enable-doc`` to the
@@ -53,6 +63,17 @@ installed for building the PDF documentation too.
 $ ./configure --enable-doc
 $ make
 ```
+
+#### Output Files
+
+The created files can be found in the ``build`` directory. The following files will be created:
+
+* ``UART.h``
+* ``libUART.so`` (Symbolic link to ``libUART.so.0``)
+* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.1``)
+* ``libUART.so.0.1``
+* ``libUART.a``
+* ``libUART.pdf``
 
 ### Build for Windows on Linux
 
@@ -66,7 +87,7 @@ $ make
 
 #### Output Files
 
-The created files can be found in the build directory. The following files will be created:
+The created files can be found in the ``build`` directory. The following files will be created:
 
 * ``UART.h``
 * ``libUART.dll``
