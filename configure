@@ -42,6 +42,8 @@ _BUILD_MAKEFILE="Makefile"
 _BUILD_DOC=0
 _BUILD_STATIC=1
 _BUILD_SHARED=1
+_BUILD_COMPILER=gcc
+_BUILD_OS=linux
 
 _INSTALL_PREFIX=/usr/local
 _INSTALL_INCDIR="$_INSTALL_PREFIX/include"
@@ -74,6 +76,8 @@ cleanup()
     unset _BUILD_DOC
     unset _BUILD_STATIC
     unset _BUILD_SHARED
+    unset _BUILD_COMPILER
+    unset _BUILD_OS
     
     unset _INSTALL_PREFIX
     unset _INSTALL_INCDIR
@@ -99,6 +103,10 @@ show_help()
     echo "Configuration:"
     echo "  -H, --help              display this help and exit"
     echo "  -V, --version           display version information and exit"
+    echo "  --target=OS             build for target operating system"
+    echo "                          [default=$_BUILD_OS]"
+    echo "  --compiler=COMPILER     build with specific compiler"
+    echo "                          [default=$_BUILD_COMPILER]"
     echo
     echo "Installation directories:"
     echo "  --prefix=PREFIX         install architecture-independent files in PREFIX"
@@ -113,7 +121,7 @@ show_help()
 # Check make utility
 check_make()
 {
-    echo -n "checking for GNU make... "
+    echo -n "checking for make... "
     _RESULT=$(which make)
     
     if [ $? -ne 0 ]
@@ -145,11 +153,11 @@ check_build()
     unset _PATH
 }
 
-# Check compiler suite
-check_compiler()
+# Check compiler suite (GCC)
+check_compiler_gnu()
 {
     # Simple check for C preprocessor
-    echo -n "checking for C preprocessor (cpp)... "
+    echo -n "checking for GNU C preprocessor (cpp)... "
     _RESULT=$(which cpp)
     
     if [ $? -ne 0 ]
@@ -161,7 +169,7 @@ check_compiler()
     fi
     
     # Simple check for GCC
-    echo -n "checking for C compiler (gcc)... "
+    echo -n "checking for GNU C compiler (gcc)... "
     _RESULT=$(which gcc)
     
     if [ $? -ne 0 ]
@@ -173,9 +181,9 @@ check_compiler()
     fi
     
     # Simple check if GCC can compile and link
-    echo -n "checking whether C compiler (gcc) works... "
+    echo -n "checking whether GNU C compiler (gcc) works... "
     echo "int foo(void){return 0;}" > /tmp/configure_test.c
-    g++ -c -o /tmp/configure_test.o /tmp/configure_test.c
+    gcc -c -o /tmp/configure_test.o /tmp/configure_test.c
     
     if [ $? -ne 0 ]
     then
@@ -189,7 +197,83 @@ check_compiler()
     rm -Rf $BUILD_DIR/tmp.c
 }
 
-check_binutils()
+# Check compiler suite for Windows (GCC)
+check_compiler_gnu_win()
+{
+    # Simple check for C preprocessor
+    echo -n "checking for GNU C preprocessor (cpp)... "
+    _RESULT=$(which x86_64-w64-mingw32-cpp)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    # Simple check for GCC
+    echo -n "checking for GNU C compiler (gcc)... "
+    _RESULT=$(which x86_64-w64-mingw32-gcc)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    # Simple check if GCC can compile and link
+    echo -n "checking whether GNU C compiler (gcc) works... "
+    echo "int foo(void){return 0;}" > /tmp/configure_test.c
+    x86_64-w64-mingw32-gcc -c -o /tmp/configure_test.o /tmp/configure_test.c
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed"
+        exit 1
+    else
+        echo "yes"
+        rm -Rf /tmp/configure_test.o
+    fi
+
+    rm -Rf $BUILD_DIR/tmp.c
+}
+
+# Check compiler suite (LLVM clang)
+check_compiler_llvm()
+{
+    # Simple check for GCC
+    echo -n "checking for LLVM C compiler (clang)... "
+    _RESULT=$(which clang)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    # Simple check if GCC can compile and link
+    echo -n "checking whether LLVM C compiler (clang) works... "
+    echo "int foo(void){return 0;}" > /tmp/configure_test.c
+    clang -c -o /tmp/configure_test.o /tmp/configure_test.c
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed"
+        exit 1
+    else
+        echo "yes"
+        rm -Rf /tmp/configure_test.o
+    fi
+
+    rm -Rf $BUILD_DIR/tmp.c
+}
+
+check_binutils_gnu()
 {
     echo -n "checking for GNU Assembler (as)... "
     _RESULT=$(which as)
@@ -236,7 +320,112 @@ check_binutils()
     fi
 }
 
-# Simple check if LaTex PDF compiler is available (optional)
+check_binutils_gnu_win()
+{
+    echo -n "checking for GNU Assembler (as)... "
+    _RESULT=$(which x86_64-w64-mingw32-as)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for GNU linker (ld)... "
+    _RESULT=$(which x86_64-w64-mingw32-ld)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for GNU archiver (ar)... "
+    _RESULT=$(which x86_64-w64-mingw32-ar)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for GNU objdump (objdump)... "
+    _RESULT=$(which x86_64-w64-mingw32-objdump)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for GNU windres (windres)... "
+    _RESULT=$(which x86_64-w64-mingw32-windres)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+}
+
+check_binutils_llvm()
+{
+    echo -n "checking for LLVM Assembler (llvm-as)... "
+    _RESULT=$(which llvm-as)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for LLVM linker (lld)... "
+    _RESULT=$(which lld)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for LLVM archiver (llvm-ar)... "
+    _RESULT=$(which llvm-ar)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+
+    echo -n "checking for LLVM objdump (llvm-objdump)... "
+    _RESULT=$(which llvm-objdump)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)"
+        exit 1
+    else
+        echo $_RESULT
+    fi
+}
+
+# Simple check if LaTeX PDF compiler is available (optional)
 check_pdflatex()
 {
     echo -n "checking for LaTeX PDF compiler (pdflatex)... "
@@ -261,12 +450,28 @@ check_pdflatex()
 # Generate libJPMath config.mk
 generate_config()
 {
-    echo -n "generating config.mk...  "
+    echo -n "generating config.mk... "
     mkdir -p $_BUILD_DIR
     rm -f $_BUILD_DIR/$_BUILD_CONFIG
     echo "# libUART config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
     echo >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "CONFIG_CONFIGURED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+
+    if [ "$_BUILD_OS" = "linux" ]
+    then
+        echo "CONFIG_BUILD_OS = linux" >> $_BUILD_DIR/$_BUILD_CONFIG
+    elif [ "$_BUILD_OS" = "windows" ]
+    then
+        echo "CONFIG_BUILD_OS = win32" >> $_BUILD_DIR/$_BUILD_CONFIG
+    fi
+
+    if [ "$_BUILD_COMPILER" = "gcc" ]
+    then
+        echo "CONFIG_BUILD_COMPILER = gcc" >> $_BUILD_DIR/$_BUILD_CONFIG
+    elif [ "$_BUILD_COMPILER" = "clang" ]
+    then
+        echo "CONFIG_BUILD_COMPILER = clang" >> $_BUILD_DIR/$_BUILD_CONFIG
+    fi
 
     if [ $_BUILD_DOC -eq 1 ]
     then
@@ -320,6 +525,14 @@ else
             _INSTALL_PREFIX=$(echo $1 | sed 's/^--prefix=\([[:print:]]\+\)/\1/g')
             shift
             ;;
+        --target=*)
+            _BUILD_OS=$(echo $1 | sed 's/^--target=\([[:print:]]\+\)/\1/g')
+            shift
+            ;;
+        --compiler=*)
+            _BUILD_COMPILER=$(echo $1 | sed 's/^--compiler=\([[:print:]]\+\)/\1/g')
+            shift
+            ;;
         --enable-doc)
             _BUILD_DOC=1
             shift
@@ -343,14 +556,47 @@ else
     done
 fi
 
-echo -n "target OS... "
+echo -n "build OS... "
 uname -o
-echo -n "target machine... "
+echo -n "build machine... "
 uname -m
 
-check_binutils
-check_compiler
-check_make
+if [ "$_BUILD_OS" = "windows" ]
+then
+    if [ "$_BUILD_COMPILER" = "clang" ]
+    then
+        echo "Building libUART for Windows with clang currently not supported!!!"
+        exit 1
+    elif [ "$_BUILD_COMPILER" = "gcc" ]
+    then
+        check_make
+        check_binutils_gnu_win
+        check_compiler_gnu_win
+    else
+        echo "Unsupported compiler suite ($_BUILD_COMPILER)!!!"
+        exit 1
+    fi
+elif [ "$_BUILD_OS" = "linux" ]
+then
+    if [ "$_BUILD_COMPILER" = "gcc" ]
+    then
+        check_make
+        check_binutils_gnu
+        check_compiler_gnu
+    elif [ "$_BUILD_COMPILER" = "clang" ]
+    then
+        check_make
+        check_binutils_llvm
+        check_compiler_llvm
+    else
+        echo "Unsupported compiler suite ($_BUILD_COMPILER)!!!"
+        exit 1
+    fi
+else
+    echo "Unsupported target operating system ($_BUILD_OS)!!!"
+    exit 1
+fi
+
 check_pdflatex
 generate_config
 echo "execute command make"
