@@ -23,21 +23,34 @@ BUILD_CONFIG		= $(BUILD_DIR)/config.mk
 
 TARGET			= libUART
 
+-include $(BUILD_CONFIG)
+
+ifneq ($(CONFIG_CONFIGURED),yes)
+$(error "$(TARGET) build system not configured, run './configure' in root directory")
+endif
+
 TARGET_STATIC		= $(TARGET).a
 TARGET_DYNAMIC		= $(TARGET).so
+TARGET_WINDLL		= $(TARGET).dll
 
 # Generic shell commands
 RM			= rm -rf
 CP			= cp -Rf
 MKDIR			= mkdir -p
+MV			= mv -f
 LN			= ln -sf
 CD			= cd
 INSTALL			= install
 
 # Toolchain
-AR			= ar
-CC			= gcc
-LD			= gcc
+ifneq ($(CROSS_COMPILE),)
+AR			= $(CROSS_COMPILE)ar
+CC			= $(CROSS_COMPILE)gcc
+LD			= $(CROSS_COMPILE)gcc
+else
+include mk/compiler.mk
+endif
+
 PDFLATEX		= pdflatex
 
 # pdflatex flags
@@ -57,6 +70,8 @@ CCFLAGS			+= -fno-delete-null-pointer-checks
 # Dynamic C compiler flags
 CCFLAGS_DYN		+= -fPIC
 
+CCFLAGS_WINDLL		+= -DLIBUART_EXPORTS
+
 # Generic GNU ld flags
 LDFLAGS			+= -Wl,-n
 LDFLAGS			+= -Wl,--build-id=none
@@ -68,22 +83,22 @@ LDFLAGS_DYN		+= -Wl,-soname,$(TARGET_DYNAMIC).0.1
 LDFLAGS_DYN		+= -Wl,-shared
 LDFLAGS_DYN		+= -Wl,-Bdynamic
 
+LDFLAGS_WINDLL		+= -Wl,-shared
+LDFLAGS_WINDLL		+= -Wl,--subsystem,windows
+LDFLAGS_WINDLL		+= -Wl,--out-implib,$(BUILD_DIR)/$(TARGET).lib
+
 # Defines
 ifneq ($(CONFIG_GIT_VERSION),)
 CCFLAGS			+= -DGIT_VERSION=$(CONFIG_GIT_VERSION)
-endif
-
--include $(BUILD_CONFIG)
-
-ifneq ($(CONFIG_CONFIGURED),yes)
-$(error "$(TARGET) build system not configured, run './configure' in root directory")
 endif
 
 include ./src/files.mk
 
 LIBUART_SCOBJ		+= $(LIBUART_SCSRC:.c=.o)
 LIBUART_DCOBJ		+= $(LIBUART_DCSRC:.c=.o)
+LIBUART_DROBJ		+= $(LIBUART_DRSRC:.rc=.o)
 
+ifneq ($(CONFIG_BUILD_OS),win32)
 ifneq ($(CONFIG_BUILD_DOC),yes)
 ifeq ($(CONFIG_BUILD_STATIC),yes)
 ifeq ($(CONFIG_BUILD_SHARED),yes)
@@ -113,6 +128,13 @@ all: copy_sources build_doc
 endif
 endif
 endif
+else
+ifneq ($(CONFIG_BUILD_DOC),yes)
+all: copy_sources libuart_windll
+else
+all: copy_sources libuart_windll build_doc
+endif
+endif
 
 #
 # libUART (static)
@@ -137,6 +159,7 @@ endif
 
 # Link object files
 ifeq ($(CONFIG_BUILD_SHARED),yes)
+ifneq ($(CONFIG_BUILD_OS),win32)
 libuart_dynamic: $(LIBUART_DCOBJ)
 	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
 	@$(CC) -shared $(CCFLAGS) $(CCFLAGS_DYN) \
@@ -144,11 +167,30 @@ libuart_dynamic: $(LIBUART_DCOBJ)
 	-o $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1 \
 	$(LIBUART_DCOBJ)
 
-
 # Compile C sources
 $(LIBUART_DCOBJ): %.o: %.c
 	@echo "   [CC]       $@"
 	@$(CC) -c $(CCFLAGS) $(CCFLAGS_DYN) -I $(BUILD_DIR) -o $@ $<
+
+else
+# Link Windows DLL
+libuart_windll: $(LIBUART_DCOBJ) $(LIBUART_DROBJ)
+	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_WINDLL)"
+	@$(CC) -shared $(CCFLAGS) \
+	$(LDFLAGS) $(LDFLAGS_WINDLL) \
+	-o $(BUILD_DIR)/$(TARGET_WINDLL) $(LIBUART_DCOBJ) $(LIBUART_DROBJ)
+
+# Compile C sources
+$(LIBUART_DCOBJ): %.o: %.c
+	@echo "   [CC]       $@"
+	@$(CC) -c $(CCFLAGS) $(CCFLAGS_WINDLL) -I $(BUILD_DIR) -o $@ $<
+
+
+# Compile Windows resources
+$(LIBUART_DROBJ): %.o: %.rc
+	@echo "   [WINDRES]  $@"
+	@$(WINDRES) -o $@ -i $<
+endif
 endif
 
 # Install
@@ -157,6 +199,7 @@ install: install_libUART
 # Install libUART
 .PHONY: install_libUART
 install_libUART:
+ifneq ($(CONFIG_BUILD_OS),win32)
 	@echo "   [INSTALL]  $(INSTALL_INCDIR)/UART.h"
 	@$(INSTALL) -d $(INSTALL_INCDIR)
 	@$(INSTALL) -m 644 -D $(BUILD_DIR)/UART.h $(INSTALL_INCDIR)
@@ -173,6 +216,7 @@ ifeq ($(CONFIG_BUILD_DOC),yes)
 	@$(INSTALL) -d $(INSTALL_DOCDIR)
 	@$(INSTALL) -m 644 -D $(BUILD_DIR)/doc/libUART.pdf $(INSTALL_DOCDIR)
 endif
+endif
 
 # Build documentation
 ifeq ($(CONFIG_BUILD_DOC),yes)
@@ -180,6 +224,8 @@ ifeq ($(CONFIG_BUILD_DOC),yes)
 build_doc:
 	@echo "   [PDFLATEX] $(BUILD_DIR)/$(TARGET).pdf"
 	@$(PDFLATEX) $(PDFLATEXFLAGS) $(BUILD_DIR)/doc/$(TARGET).tex 1>/dev/null
+	@$(MV) $(BUILD_DIR)/doc/$(TARGET).pdf $(BUILD_DIR)/$(TARGET).pdf
+
 endif
 
 # Clean (remove build directory)
@@ -191,6 +237,7 @@ clean:
 # Copy sources in build directory
 .PHONY: copy_sources
 copy_sources:
+ifneq ($(CONFIG_BUILD_OS),win32)
 ifeq ($(CONFIG_BUILD_SHARED),yes)
 	@$(MKDIR) $(BUILD_DIR)/dynamic
 	@$(CP) $(LIBUART_DIR)/*.c $(BUILD_DIR)/dynamic
@@ -202,6 +249,13 @@ ifeq ($(CONFIG_BUILD_STATIC),yes)
 	@$(CP) $(LIBUART_DIR)/*.c $(BUILD_DIR)/static
 	@$(CP) $(LIBUART_DIR)/*.h $(BUILD_DIR)/static
 	@$(CP) $(LIBUART_DIR)/*.mk $(BUILD_DIR)/static
+endif
+else
+	@$(MKDIR) $(BUILD_DIR)/dynamic
+	@$(CP) $(LIBUART_DIR)/*.c $(BUILD_DIR)/dynamic
+	@$(CP) $(LIBUART_DIR)/*.h $(BUILD_DIR)/dynamic
+	@$(CP) $(LIBUART_DIR)/*.mk $(BUILD_DIR)/dynamic
+	@$(CP) $(LIBUART_DIR)/*.rc $(BUILD_DIR)/dynamic
 endif
 	@$(CP) $(LIBUART_DIR)/include/*.h $(BUILD_DIR)
 ifeq ($(CONFIG_BUILD_DOC),yes)
