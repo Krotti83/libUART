@@ -124,7 +124,7 @@ int main(int c, char *argv[])
     UART_init();
     
     /* Open the UART port */
-    UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
+    uart = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
     
     /* Send something over the UART */
     UART_puts(uart, "Hello World!\r\n");
