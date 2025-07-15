@@ -862,7 +862,7 @@ int flow;
 
 UART_get_flowctrl(uart, &flow);
 \end{lstlisting}
-\subsection{UART\_get\_fd() Function}
+\subsection{UART\_get\_fd() Function (Linux only)}
 The \textit{UART\_get\_dev() function} returns the file
 descriptor from the \textbf{UART} interface.
 \subsubsection*{Prototype}
@@ -889,6 +889,36 @@ Returns \textbf{0} on success, or \textbf{-1} on failure.
 int fd;
 
 UART_get_fd(uart, &fd);
+\end{lstlisting}
+\subsection{UART\_get\_handle() Function (Windows only)}
+The \textit{UART\_get\_handle() function} returns the file
+handle from the \textbf{UART} interface.
+\subsubsection*{Prototype}
+\begin{lstlisting}
+#include <windows.h>
+#include <UART.h>
+
+int UART_get_handle(uart_t *uart, HANDLE *ret_h);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item UART object/handle
+\begin{description}
+\item[NOTE:] Pointer to a valid UART object handle from the type \textit{uart\_t}
+created with the \textit{UART\_open() function}.
+\end{description}
+\item Pointer to file handle
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{0} on success, or \textbf{-1} on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <windows.h>
+#include <UART.h>
+
+HANDLE h;
+
+UART_get_handle(uart, &h);
 \end{lstlisting}
 \subsection{UART\_get\_dev() Function}
 The \textit{UART\_get\_dev() function} returns the device
