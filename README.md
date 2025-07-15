@@ -144,7 +144,7 @@ on your system.
 ```
 $ gcc -I build -o test test.c build/libUART.a
 ```
-Example if you want to link statically to the library if the library isn't installed
+Example if you want to link dynamically to the library if the library isn't installed
 on your system.
 
 ### Link against the library (dynamic/shared)
