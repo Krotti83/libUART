@@ -20,3 +20,4 @@
 
 CC			= clang
 LD			= clang
+AR			= llvm-ar
