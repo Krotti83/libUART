@@ -288,8 +288,8 @@ Usage
 
     UART_get_baud(uart_obj, &baud);
 
-Function ``int UART_get_fd(uart_t *uart, int *ret_fd)``
--------------------------------------------------------
+Function ``int UART_get_fd(uart_t *uart, int *ret_fd)`` (Linux only)
+--------------------------------------------------------------------
 
 Description
 ~~~~~~~~~~~
@@ -312,6 +312,31 @@ Usage
     int fd;
 
     UART_get_fd(uart_obj, &fd);
+
+Function ``int UART_get_handle(uart_t *uart, HANDLE *ret_h)`` (Windows only)
+--------------------------------------------------------------------------
+
+Description
+~~~~~~~~~~~
+Get the underlying file handle for the UART.
+
+Arguments
+~~~~~~~~~
+    - UART object/handle (``uart``)
+    - Pointer to the file handle (``ret_h``)
+
+Returns
+~~~~~~~
+Returns ``0`` on success, or ``-1`` if an error occurred.
+
+Usage
+~~~~~
+
+.. code-block:: c
+
+    HANDLE fd;
+
+    UART_get_fd(uart_obj, &ret_h);
 
 Function ``int UART_get_dev(uart_t *uart, char **ret_dev)``
 -----------------------------------------------------------
