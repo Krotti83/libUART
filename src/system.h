@@ -24,20 +24,47 @@
 #define _LIBUART_SYSTEM_H
 
 #ifdef _WIN32
-#include "windows.h"
+#include <windows.h>
+#else
+#include <pthread.h>
 #endif
 
 #include <UART.h>
 
 #define DEV_NAME_LEN        256
 
+#define DEV_FLAGS_OPENED    0x00000001
+#define DEV_FLAGS_ERROR     0x80000000
+
 struct _uart {
 #ifdef __unix__
     int fd;
+#ifdef LIBUART_THREADS
+    pthread_t rx_thread;
+    pthread_t tx_thread;
+    pthread_mutex_t rx_mutex;
+    pthread_mutex_t tx_mutex;
+    int rx_thread_run;
+    int tx_thread_run;
+    pthread_mutex_t rx_lock;
+    pthread_mutex_t tx_lock;
+#endif
 #elif _WIN32
     HANDLE h;
     COMMPROP prop;
+#ifdef LIBUART_THREADS
+    HANDLE rx_thread;
+    HANDLE tx_thread;
+    HANDLE rx_mutex;
+    HANDLE tx_mutex;
+    int rx_mutex_run;
+    int tx_mutex_run;
+    HANDLE rx_lock;
+    HANDLE tx_lock;
 #endif
+#endif
+    buffer_t rx_buffer;
+    buffer_t tx_buffer;
     char dev[DEV_NAME_LEN];
     int baud;
     int data_bits;
@@ -47,6 +74,7 @@ struct _uart {
     int error;
     char *err_msg;
     int err_msg_len;
+    unsigned int flags;
 };
 
 extern int _uart_baud_valid(int value);
