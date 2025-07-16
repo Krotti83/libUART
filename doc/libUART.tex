@@ -22,7 +22,7 @@
     stringstyle=\color{red},
     identifierstyle=\bfseries{\color{black}}
 }
-\title{libUART - Easy to use UART library \\ Programming Guide v0.1.0.x (rev. 0)}
+\title{libUART - Easy to use UART library \\ Programming Guide v0.1.1.x (rev. 0)}
 \author{Johannes Krottmayer}
 \begin{document}
 \maketitle
@@ -67,12 +67,12 @@ functions with the library.
 \begin{lstlisting}
 #include <UART.h>
 
-void UART_init(void);
+int UART_init(void);
 \end{lstlisting}
 \subsubsection*{Arguments}
 None
 \subsubsection*{Returns}
-None
+Returns \textbf{0} on success, or a negative value on failure.
 \subsubsection*{Usage}
 \begin{lstlisting}
 #include <UART.h>

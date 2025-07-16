@@ -119,13 +119,22 @@ A *short* example how to use the library.
 
 int main(int c, char *argv[])
 {
+    int ret;
     uart_t *uart;
     
     /* Initialize the library */
-    UART_init();
+    ret = UART_init();
+    
+    if (ret != UART_ESUCCESS) {
+        return 1;
+    }
     
     /* Open the UART port */
     uart = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
+    
+    if (!uart) {
+        return 1;
+    }
     
     /* Send something over the UART */
     UART_puts(uart, "Hello World!\r\n");

@@ -16,7 +16,7 @@ Usage
 
     #include <UART.h>
 
-Function ``void UART_init(void)``
+Function ``int UART_init(void)``
 ---------------------------------
 
 Description
@@ -29,7 +29,7 @@ Arguments
 
 Returns
 ~~~~~~~
-None
+Returns ``0`` on success, or an error code on failure.
 
 Usage
 ~~~~~
