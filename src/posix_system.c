@@ -25,6 +25,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <grp.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 
@@ -836,87 +837,36 @@ int _uart_init_flow(struct _uart *uart)
     return 0;
 }
 
-int _uart_init(struct _uart *uart)
+int _uart_init(void)
 {
     int ret;
-    struct termios options;
-    
-    /* set non-blocking mode */
-    ret = fcntl(uart->fd, F_SETFL, O_NDELAY);
-    
-    if (ret == -1) {
-        uart->error = UART_ESYSTEM;
-        _uart_error(uart, __func__, "fcntl() failed");
-        return -1;
-    }
-    
-    /* set baud rate */
-    ret = _uart_init_baud(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set data bits */
-    ret = _uart_init_databits(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set parity */
-    ret = _uart_init_parity(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set stop bits */
-    ret = _uart_init_stopbits(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set flow control */
-    ret = _uart_init_flow(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    ret = tcgetattr(uart->fd, &options);
-    
-    if (ret == -1) {
-        uart->error = UART_ESYSTEM;
-        _uart_error(uart, __func__, "tcgetattr() failed");
-        return -1;
-    }
-    
-    /* set raw mode (see man cfmakeraw) */
-    options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-    options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP |
-                         INLCR | IGNCR | ICRNL | IXON);
-    options.c_oflag &= ~OPOST;
-    options.c_cflag &= ~(CSIZE | PARENB);
-    options.c_cflag |= CS8;
+    int i;
+    gid_t g_list[256];
+    struct group *g;
 
-    /* enable receiver and set local mode */
-    options.c_cflag |= (CLOCAL | CREAD);
-    
-    /* set raw output */
-    options.c_oflag &= ~OPOST;
-    ret = tcsetattr(uart->fd, TCSANOW, &options);
-    
-    if (ret == -1) {
-        uart->error = UART_ESYSTEM;
-        _uart_error(uart, __func__, "tcsetattr() failed");
-        return -1;
+    ret = getgroups(256, g_list);
+
+    /* User should be in group dialout */
+    g = getgrnam("dialout");
+
+    if (!g) {
+        return UART_ESYSTEM;
     }
-    
-    uart->error = UART_ESUCCESS;
-    return 0;
+
+    for (i = 0; i < ret; i++) {
+        if (g_list[i] == g->gr_gid) {
+            return UART_ESUCCESS;;
+        }
+    }
+
+    return UART_EPERM;
 }
 
 int _uart_open(struct _uart *uart)
 {
     int ret;
     int fd;
+    struct termios options;
     
     fd = open(uart->dev, O_RDWR | O_NOCTTY | O_NDELAY);
     
@@ -927,10 +877,72 @@ int _uart_open(struct _uart *uart)
     }
     
     uart->fd = fd;
-    ret = _uart_init(uart);
-    
+
+    /* set non-blocking mode */
+    ret = fcntl(uart->fd, F_SETFL, O_NDELAY);
+
     if (ret == -1) {
-        close(fd);
+        uart->error = UART_ESYSTEM;
+        _uart_error(uart, __func__, "fcntl() failed");
+        return -1;
+    }
+
+    /* set baud rate */
+    ret = _uart_init_baud(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set data bits */
+    ret = _uart_init_databits(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set parity */
+    ret = _uart_init_parity(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set stop bits */
+    ret = _uart_init_stopbits(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set flow control */
+    ret = _uart_init_flow(uart);
+
+    if (ret == -1)
+        return -1;
+
+    ret = tcgetattr(uart->fd, &options);
+
+    if (ret == -1) {
+        uart->error = UART_ESYSTEM;
+        _uart_error(uart, __func__, "tcgetattr() failed");
+        return -1;
+    }
+
+    /* set raw mode (see man cfmakeraw) */
+    options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+    options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP |
+    INLCR | IGNCR | ICRNL | IXON);
+    options.c_oflag &= ~OPOST;
+    options.c_cflag &= ~(CSIZE | PARENB);
+    options.c_cflag |= CS8;
+
+    /* enable receiver and set local mode */
+    options.c_cflag |= (CLOCAL | CREAD);
+
+    /* set raw output */
+    options.c_oflag &= ~OPOST;
+    ret = tcsetattr(uart->fd, TCSANOW, &options);
+
+    if (ret == -1) {
+        uart->error = UART_ESYSTEM;
+        _uart_error(uart, __func__, "tcsetattr() failed");
         return -1;
     }
     

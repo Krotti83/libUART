@@ -457,41 +457,9 @@ int _uart_init_flow(struct _uart *uart)
     return 0;
 }
 
-int _uart_init(struct _uart *uart)
+int _uart_init(void)
 {
-    int ret;
-    
-    /* set baud rate */
-    ret = _uart_init_baud(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set data bits */
-    ret = _uart_init_databits(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set parity */
-    ret = _uart_init_parity(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set stop bits */
-    ret = _uart_init_stopbits(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    /* set flow control */
-    ret = _uart_init_flow(uart);
-    
-    if (ret == -1)
-        return -1;
-    
-    return 0;
+    return UART_ESUCCESS;
 }
 
 int _uart_open(struct _uart *uart)
@@ -522,7 +490,32 @@ int _uart_open(struct _uart *uart)
         return -1;
     }
     
-    ret = _uart_init(uart);
+    /* set baud rate */
+    ret = _uart_init_baud(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set data bits */
+    ret = _uart_init_databits(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set parity */
+    ret = _uart_init_parity(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set stop bits */
+    ret = _uart_init_stopbits(uart);
+
+    if (ret == -1)
+        return -1;
+
+    /* set flow control */
+    ret = _uart_init_flow(uart);
     
     if (ret == -1) {
         CloseHandle(h);
