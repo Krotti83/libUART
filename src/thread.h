@@ -23,6 +23,8 @@
 #ifndef _LIBUART_THREAD_H
 #define _LIBUART_THREAD_H
 
+#include "system.h"
+
 extern int _uart_thread_init(uart_t *uart);
 extern int _uart_thread_start(uart_t *uart);
 extern int _uart_thread_stop(uart_t *uart);
