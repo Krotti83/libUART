@@ -33,10 +33,12 @@ _CONFIG_SIZEOF_FLOAT=0
 _CONFIG_SIZEOF_DOUBLE=0
 _CONFIG_SIZEOF_LONGDOUBLE=0
 
+_TARGET="libUART"
+
 _BUILD_INTREE=1
 _BUILD_CURDIR="."
 _BUILD_SRCDIR="."
-_BUILD_DIR="./build"
+_BUILD_DIR="build"
 _BUILD_CONFIG="config.mk"
 _BUILD_MAKEFILE="Makefile"
 _BUILD_DOC=0
@@ -48,8 +50,8 @@ _BUILD_OS=linux
 _INSTALL_PREFIX=/usr/local
 _INSTALL_INCDIR="$_INSTALL_PREFIX/include"
 _INSTALL_LIBDIR="$_INSTALL_PREFIX/lib64"
-_INSTALL_SHAREDIR="$_INSTALL_PREFIX/share/libUART"
-_INSTALL_DOCDIR="$_INSTALL_PREFIX/doc/libUART"
+_INSTALL_SHAREDIR="$_INSTALL_PREFIX/share/$_TARGET"
+_INSTALL_DOCDIR="$_INSTALL_PREFIX/doc/$_TARGET"
 
 # Cleanup
 cleanup()
@@ -66,6 +68,8 @@ cleanup()
     unset _CONFIG_SIZEOF_FLOAT
     unset _CONFIG_SIZEOF_DOUBLE
     unset _CONFIG_SIZEOF_LONGDOUBLE
+
+    unset _TARGET
     
     unset _BUILD_INTREE
     unset _BUILD_CURDIR
@@ -107,6 +111,8 @@ show_help()
     echo "                          [default=$_BUILD_OS]"
     echo "  --compiler=COMPILER     build with specific compiler"
     echo "                          [default=$_BUILD_COMPILER]"
+    echo "  --build-dir=DIR         build in specific directory"
+    echo "                          [default=$_BUILD_DIR]"
     echo
     echo "Installation directories:"
     echo "  --prefix=PREFIX         install architecture-independent files in PREFIX"
@@ -135,7 +141,7 @@ check_make()
     unset _RESULT
 }
 
-# Check build directory, if in-tree
+# Check build directory, if in-tree (currently not used)
 check_build()
 {
     _PATH=$(dirname $0)
@@ -143,7 +149,7 @@ check_build()
     if [ $_PATH -eq "." ]
     then
         _BUILD_INTREE=1
-        mkdir -p build
+        mkdir -p $_BUILD_DIR
     else
         _BUILD_INTREE=0
     fi
@@ -195,6 +201,7 @@ check_compiler_gnu()
     fi
     
     rm -Rf $BUILD_DIR/tmp.c
+    unset _RESULT
 }
 
 # Check compiler suite for Windows (GCC)
@@ -239,6 +246,7 @@ check_compiler_gnu_win()
     fi
 
     rm -Rf $BUILD_DIR/tmp.c
+    unset _RESULT
 }
 
 # Check compiler suite (LLVM clang)
@@ -271,8 +279,10 @@ check_compiler_llvm()
     fi
 
     rm -Rf $BUILD_DIR/tmp.c
+    unset _RESULT
 }
 
+# Check GNU binutils
 check_binutils_gnu()
 {
     echo -n "checking for GNU Assembler (as)... "
@@ -318,8 +328,11 @@ check_binutils_gnu()
     else
         echo $_RESULT
     fi
+
+    unset _RESULT
 }
 
+# Check GNU MINGW binutils
 check_binutils_gnu_win()
 {
     echo -n "checking for GNU Assembler (as)... "
@@ -376,8 +389,11 @@ check_binutils_gnu_win()
     else
         echo $_RESULT
     fi
+
+    unset _RESULT
 }
 
+# Check LLVM binutils
 check_binutils_llvm()
 {
     echo -n "checking for LLVM Assembler (llvm-as)... "
@@ -423,6 +439,8 @@ check_binutils_llvm()
     else
         echo $_RESULT
     fi
+
+    unset _RESULT
 }
 
 # Simple check if LaTeX PDF compiler is available (optional)
@@ -447,13 +465,13 @@ check_pdflatex()
     unset _RESULT
 }
 
-# Generate libJPMath config.mk
+# Generate config.mk
 generate_config()
 {
     echo -n "generating config.mk... "
     mkdir -p $_BUILD_DIR
     rm -f $_BUILD_DIR/$_BUILD_CONFIG
-    echo "# libUART config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
+    echo "# $_TARGET config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
     echo >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "CONFIG_CONFIGURED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
 
@@ -494,6 +512,8 @@ generate_config()
         echo "CONFIG_BUILD_SHARED = no" >> $_BUILD_DIR/$_BUILD_CONFIG
     fi
 
+    echo "CONFIG_BUILD_DIR = $_BUILD_DIR" >> $_BUILD_DIR/$_BUILD_CONFIG
+
     echo "CONFIG_GIT_VERSION = $(sh ./scripts/git_version.sh)" >> $_BUILD_DIR/$_BUILD_CONFIG
 
     echo "INSTALL_PREFIX = $_INSTALL_PREFIX" >> $_BUILD_DIR/$_BUILD_CONFIG
@@ -533,6 +553,10 @@ else
             _BUILD_COMPILER=$(echo $1 | sed 's/^--compiler=\([[:print:]]\+\)/\1/g')
             shift
             ;;
+        --build-dir=*)
+            _BUILD_DIR=$(echo $1 | sed 's/^--build-dir=\([[:print:]]\+\)/\1/g')
+            shift
+            ;;
         --enable-doc)
             _BUILD_DOC=1
             shift
@@ -565,7 +589,7 @@ if [ "$_BUILD_OS" = "windows" ]
 then
     if [ "$_BUILD_COMPILER" = "clang" ]
     then
-        echo "Building libUART for Windows with clang currently not supported!!!"
+        echo "Building $_TARGET for Windows with clang currently not supported!!!"
         exit 1
     elif [ "$_BUILD_COMPILER" = "gcc" ]
     then
