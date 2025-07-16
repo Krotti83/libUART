@@ -171,11 +171,23 @@ enum e_pins {
 /* Initialize the library */
 extern int UART_init(void);
 
+/* Opens an UART interface by device name */
+extern uart_t *UART_open_dev(const char *dev, enum e_baud baud, const char *opt);
+
+/* Return all available UART devices on system */
+extern ssize_t UART_get_device_list(size_t len, uart_t **ret_uarts);
+
 /* Opens an UART interface */
-extern uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt);
+extern int UART_open(uart_t *uart, enum e_baud baud, const char *opt);
 
 /* Closes the UART interface */
 extern void UART_close(uart_t *uart);
+
+/* Free UART device */
+extern void UART_free(uart_t *uart);
+
+/* Free UART device list */
+extern void UART_free_device_list(uart_t **uarts, size_t len);
 
 /**
  * libUART Basic Input/Output Functions
@@ -275,11 +287,23 @@ extern char *UART_get_libversion(void);
 /* Initialize the library */
 extern LIBUART_API int UART_init(void);
 
+/* Opens an UART interface by device name */
+extern LIBUART_API uart_t *UART_open_dev(const char *dev, enum e_baud baud, const char *opt);
+
+/* Return all available UART devices on system */
+extern LIBUART_API ssize_t UART_get_device_list(size_t len, uart_t **ret_uarts);
+
 /* Opens an UART interface */
-extern LIBUART_API uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt);
+extern LIBUART_API int UART_open(uart_t *uart, enum e_baud baud, const char *opt);
 
 /* Closes the UART interface */
 extern LIBUART_API void UART_close(uart_t *uart);
+
+/* Free UART device */
+extern LIBUART_API void UART_free(uart_t *uart);
+
+/* Free UART device list */
+extern LIBUART_API void UART_free_device_list(uart_t **uarts, size_t len);
 
 /**
  * libUART Basic Input/Output Functions
