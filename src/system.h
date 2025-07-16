@@ -29,6 +29,8 @@
 #include <pthread.h>
 #endif
 
+#include "buffer.h"
+
 #include <UART.h>
 
 #define DEV_NAME_LEN        256
@@ -63,8 +65,10 @@ struct _uart {
     HANDLE tx_lock;
 #endif
 #endif
-    buffer_t rx_buffer;
-    buffer_t tx_buffer;
+#ifdef LIBUART_THREADS
+    buffer_t *rx_buffer;
+    buffer_t *tx_buffer;
+#endif
     char dev[DEV_NAME_LEN];
     int baud;
     int data_bits;
