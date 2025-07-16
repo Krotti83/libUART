@@ -26,15 +26,31 @@ LIBUART_SCSRC				+= $(BUILD_DIR)/static/posix_system.c
 LIBUART_SCSRC				+= $(BUILD_DIR)/static/uart.c
 LIBUART_SCSRC				+= $(BUILD_DIR)/static/util.c
 
+ifeq ($(CONFIG_BUILD_THREADS),yes)
+LIBUART_SCSRC				+= $(BUILD_DIR)/static/buffer.c
+LIBUART_SCSRC				+= $(BUILD_DIR)/static/posix_thread.c
+endif
+
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/posix_error.c
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/posix_system.c
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/uart.c
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/util.c
+
+ifeq ($(CONFIG_BUILD_THREADS),yes)
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/buffer.c
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/posix_thread.c
+endif
+
 else
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/win32_error.c
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/win32_system.c
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/uart.c
 LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/util.c
+
+ifeq ($(CONFIG_BUILD_THREADS),yes)
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/buffer.c
+LIBUART_DCSRC				+= $(BUILD_DIR)/dynamic/win32_thread.c
+endif
 
 LIBUART_DRSRC				+= $(BUILD_DIR)/dynamic/win32_resource.rc
 endif
