@@ -2,8 +2,8 @@
 
 // DLL version information.
 VS_VERSION_INFO     VERSIONINFO
-FILEVERSION         0,1,1,0
-PRODUCTVERSION      0,1,1,0
+FILEVERSION         0,1,2,0
+PRODUCTVERSION      0,1,2,0
 FILEFLAGSMASK       VS_FFI_FILEFLAGSMASK
 #ifdef _DEBUG
 FILEFLAGS           VS_FF_DEBUG | VS_FF_PRERELEASE
@@ -20,12 +20,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Johannes Krottmayer"
             VALUE "FileDescription", "Easy to use UART library"
-            VALUE "FileVersion", "0.1.1.0"
+            VALUE "FileVersion", "0.1.2.0"
             VALUE "InternalName", "libUART"
             VALUE "LegalCopyright", "Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>"
             VALUE "OriginalFilename", "libUART.dll"
             VALUE "ProductName", "UART Library"
-            VALUE "ProductVersion", "0.1.1.0"
+            VALUE "ProductVersion", "0.1.2.0"
         END
     END
     BLOCK "VarFileInfo"
