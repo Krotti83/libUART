@@ -3,7 +3,7 @@
 # libUART
 
 Easy to use library for accessing the **UART** (serial interface). The library use the **POSIX**
-functions ``termios`` on **Linux**. It should also possible to use the library on ***BSD**
+functions ``termios`` on **Linux**. It should also be possible to use the library on ***BSD**
 systems too, but currently not tested. In the ``UART_open()`` function the library setups
 the **UART** in *raw* and *none-blocking* mode currently. On **Windows** the **UART** library
 doesn't use a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``.
@@ -29,14 +29,14 @@ which are provided for the library are fully usable.
 * GNU make
 * GNU binutils or LLVM binutils
 * GCC or LLVM clang
-* GCC for Windows if cross building for Windows on Linux
-* pdflatex (only required if the PDF documentation should be build too)
+* GCC for Windows if cross building for Windows on Linux (target ``x86_64-w64-mingw32-``)
+* ``pdflatex`` (only required if the PDF documentation should be build)
 
 ## Building the library
 ### Build without documentation
 
 With the *default* setup, the PDF documentation will not be build. But the API documentation is
-still available in under ``doc/libUART.rst``. Only the **LaTeX** document will not be build.
+still available under ``doc/libUART.rst``. Only the **LaTeX** document will not be build.
 
 ```
 $ ./configure
