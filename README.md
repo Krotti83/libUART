@@ -3,7 +3,7 @@
 # libUART
 
 Easy to use library for accessing the **UART** (serial interface). The library use the **POSIX**
-functions ``termios`` on **Linux**. It should also be possible to use the library on ***BSD**
+functions from ``termios`` on **Linux**. So it should also be possible to use the library on ***BSD**
 systems too, but currently not tested. In the ``UART_open()`` function the library setups
 the **UART** in *raw* and *none-blocking* mode currently. On **Windows** the **UART** library
 doesn't use a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``.
@@ -21,6 +21,7 @@ which are provided for the library are fully usable.
 ## TODO
 
 * Add threading support
+* Add **FreeBSD** support
 * Add **Visual Studio** support (currently only cross building through **MINGW** is supported)
 * Fully complete documentation
 
