@@ -67,6 +67,11 @@ CCFLAGS			+= -ffunction-sections
 CCFLAGS			+= -fdata-sections
 CCFLAGS			+= -fno-delete-null-pointer-checks
 
+ifeq ($(CONFIG_BUILD_THREADS),yes)
+CCFLAGS			+= -DLIBUART_THREADS
+CCFLAGS			+= -D_DEFAULT_SOURCE
+endif
+
 # Dynamic C compiler flags
 CCFLAGS_DYN		+= -fPIC
 
