@@ -194,9 +194,9 @@ extern void UART_free_device_list(uart_t **uarts, size_t len);
  */
 
 /* Send data over the UART interface */
-extern ssize_t UART_send(uart_t *uart, char *send_buf, size_t len);
+extern ssize_t UART_send(uart_t *uart, void *send_buf, size_t len);
 /* Receive data from the UART interface */
-extern ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len);
+extern ssize_t UART_recv(uart_t *uart, void *recv_buf, size_t len);
 
 /**
  * libUART Input/Output Functions
@@ -310,10 +310,10 @@ extern LIBUART_API void UART_free_device_list(uart_t **uarts, size_t len);
  */
 
 /* Send data over the UART interface */
-extern LIBUART_API ssize_t UART_send(uart_t *uart, char *send_buf, size_t len);
+extern LIBUART_API ssize_t UART_send(uart_t *uart, void *send_buf, size_t len);
 
 /* Receive data from the UART interface */
-extern LIBUART_API ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len);
+extern LIBUART_API ssize_t UART_recv(uart_t *uart, void *recv_buf, size_t len);
 
 /**
  * libUART Input/Output Functions
