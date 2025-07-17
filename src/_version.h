@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _LIBUART_VERSION_H
-#define _LIBUART_VERSION_H
+#ifndef _LIBUART_INTERNAL_VERSION_H
+#define _LIBUART_INTERNAL_VERSION_H
 
 #define LIBUART_NAME            "libUART"
 #define LIBUART_VERSION         "v0.1.2.0"
