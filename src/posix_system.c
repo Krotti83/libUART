@@ -28,6 +28,7 @@
 #include <grp.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <dirent.h>
 
 #include "error.h"
 #include "version.h"
@@ -862,6 +863,19 @@ int _uart_init(void)
     return UART_EPERM;
 }
 
+ssize_t _uart_get_device_list(size_t len, struct _uart **ret_uarts)
+{
+    FILE *f_drivers;
+
+    f_drivers = fopen("proc/tty/drivers", "rb");
+
+    if (!f_drivers) {
+        return 0;
+    }
+
+    return 0;
+}
+
 int _uart_open(struct _uart *uart)
 {
     int ret;
@@ -955,7 +969,7 @@ void _uart_close(struct _uart *uart)
     close(uart->fd);
 }
 
-ssize_t _uart_send(struct _uart *uart, char *send_buf, size_t len)
+ssize_t _uart_send(struct _uart *uart, void *send_buf, size_t len)
 {
     ssize_t ret;
     
@@ -977,7 +991,7 @@ ssize_t _uart_send(struct _uart *uart, char *send_buf, size_t len)
     return ret;
 }
 
-ssize_t _uart_recv(struct _uart *uart, char *recv_buf, size_t len)
+ssize_t _uart_recv(struct _uart *uart, void *recv_buf, size_t len)
 {
     ssize_t ret = 0;
     
