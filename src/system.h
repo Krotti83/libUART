@@ -26,10 +26,16 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
+#ifdef LIBUART_THREADS
 #include <pthread.h>
 #endif
+#endif
 
+#ifdef LIBUART_THREADS
 #include "buffer.h"
+
+#define DEV_BUFFER_SIZE     1048576         /* 1MiB */
+#endif
 
 #include <UART.h>
 
@@ -81,6 +87,7 @@ struct _uart {
     unsigned int flags;
 };
 
+extern ssize_t _uart_get_device_list(size_t len, struct _uart **ret_uarts);
 extern int _uart_baud_valid(int value);
 extern int _uart_init_baud(struct _uart *uart);
 extern int _uart_init_databits(struct _uart *uart);
@@ -90,8 +97,8 @@ extern int _uart_init_flow(struct _uart *uart);
 extern int _uart_init(void);
 extern int _uart_open(struct _uart *uart);
 extern void _uart_close(struct _uart *uart);
-extern ssize_t _uart_send(struct _uart *uart, char *send_buf, size_t len);
-extern ssize_t _uart_recv(struct _uart *uart, char *recv_buf, size_t len);
+extern ssize_t _uart_send(struct _uart *uart, void *send_buf, size_t len);
+extern ssize_t _uart_recv(struct _uart *uart, void *recv_buf, size_t len);
 extern int _uart_flush(struct _uart *uart);
 extern int _uart_set_pin(struct _uart *uart, enum e_pins pin, int state);
 extern int _uart_get_pin(struct _uart *uart, enum e_pins pin, int *state);
