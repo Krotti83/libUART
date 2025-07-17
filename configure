@@ -75,6 +75,7 @@ cleanup()
     
     unset _CONFIG_OS
     unset _CONFIG_MACHINE
+    unset _CONFIG_SIZEOF_CHAR
     unset _CONFIG_SIZEOF_SIZE_T
     unset _CONFIG_SIZEOF_INT
     unset _CONFIG_SIZEOF_LONG
@@ -87,6 +88,11 @@ cleanup()
     unset _CONFIG_SIZEOF_PTRDIFF_T
     unset _CONFIG_SIZEOF_WCHAR_T
 
+    unset _CONFIG_CSRC
+    unset _CONFIG_COBJ
+    unset _CONFIG_EXEC
+    unset _CONFIG_SOBJ
+
     unset _TARGET
     unset _TARGET_VERSION
     
@@ -95,6 +101,7 @@ cleanup()
     unset _BUILD_SRCDIR
     unset _BUILD_DIR
     unset _BUILD_CONFIG
+    unset _BUILD_LOG
     unset _BUILD_MAKEFILE
     unset _BUILD_DOC
     unset _BUILD_STATIC
@@ -102,6 +109,7 @@ cleanup()
     unset _BUILD_COMPILER
     unset _BUILD_OS
     unset _BUILD_THREADS
+    unset _BUILD_DEBUG
     
     unset _INSTALL_PREFIX
     unset _INSTALL_INCDIR
@@ -164,6 +172,7 @@ check_make()
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -181,6 +190,7 @@ check_wine()
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -681,6 +691,32 @@ check_compiler_gnu()
         rm -Rf $_CONFIG_EXEC
     fi
 
+    # Check for sizeof(wchar_t)
+    echo -n "checking for sizeof(wchar_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "#include <wchar.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(wchar_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    gcc -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_WCHAR_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
     unset _RESULT
 }
 
@@ -1161,7 +1197,35 @@ check_compiler_gnu_win()
         rm -Rf $_CONFIG_EXEC.exe
     fi
 
+    # Check for sizeof(wchar_t)
+    echo -n "checking for sizeof(wchar_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "#include <wchar.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(wchar_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_WCHAR_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
     unset _RESULT
+    unset _CC
+    unset _CROSS
 }
 
 # Check compiler suite (LLVM clang)
@@ -1625,6 +1689,32 @@ check_compiler_llvm()
         rm -Rf $_CONFIG_EXEC
     fi
 
+    # Check for sizeof(wchar_t)
+    echo -n "checking for sizeof(wchar_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "#include <wchar.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(wchar_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_WCHAR_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
     unset _RESULT
 }
 
@@ -1685,8 +1775,10 @@ check_binutils_gnu()
 # Check GNU MINGW binutils
 check_binutils_gnu_win()
 {
-    echo -n "checking for GNU Assembler (as)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    _RESULT=$(which x86_64-w64-mingw32-as)
+    _CROSS=x86_64-w64-mingw32
+
+    echo -n "checking for GNU Assembler ($_CROSS-as)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CROSS-as)
 
     if [ $? -ne 0 ]
     then
@@ -1697,8 +1789,8 @@ check_binutils_gnu_win()
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU linker (ld)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    _RESULT=$(which x86_64-w64-mingw32-ld)
+    echo -n "checking for GNU linker ($_CROSS-ld)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CROSS-ld)
 
     if [ $? -ne 0 ]
     then
@@ -1709,8 +1801,8 @@ check_binutils_gnu_win()
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU archiver (ar)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    _RESULT=$(which x86_64-w64-mingw32-ar)
+    echo -n "checking for GNU archiver ($_CROSS-ar)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CROSS-ar)
 
     if [ $? -ne 0 ]
     then
@@ -1721,8 +1813,8 @@ check_binutils_gnu_win()
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU objdump (objdump)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    _RESULT=$(which x86_64-w64-mingw32-objdump)
+    echo -n "checking for GNU objdump ($_CROSS-objdump)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CROSS-objdump)
 
     if [ $? -ne 0 ]
     then
@@ -1733,8 +1825,8 @@ check_binutils_gnu_win()
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU windres (windres)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    _RESULT=$(which x86_64-w64-mingw32-windres)
+    echo -n "checking for GNU windres ($_CROSS-windres)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CROSS-windres)
 
     if [ $? -ne 0 ]
     then
@@ -1746,6 +1838,7 @@ check_binutils_gnu_win()
     fi
 
     unset _RESULT
+    unset _CROSS
 }
 
 # Check LLVM binutils
@@ -1757,6 +1850,7 @@ check_binutils_llvm()
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -1768,6 +1862,7 @@ check_binutils_llvm()
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -1779,6 +1874,7 @@ check_binutils_llvm()
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -1790,6 +1886,7 @@ check_binutils_llvm()
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
         echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -1906,8 +2003,11 @@ check_libc()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -1930,8 +2030,11 @@ check_libc()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -1954,8 +2057,12 @@ check_libc()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fseek(f, 0, SEEK_SET);" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -1978,8 +2085,13 @@ check_libc()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fseek(f, 0, SEEK_SET);" >> $_CONFIG_CSRC
+    echo "    ftell(f);" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2002,8 +2114,37 @@ check_libc()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
     echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fread(buf, 1, 256, f);" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc memset()
+    echo -n "checking for libc function memset (string.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <string.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    memset(buf, 0, 256);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2075,7 +2216,8 @@ check_libc()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
+    echo "    memset(buf, 0, 256);" >> $_CONFIG_CSRC
+    echo "    strcat(buf, \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2150,6 +2292,7 @@ check_libc()
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    fcntl(fd, F_SETFL, O_NDELAY);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2201,7 +2344,9 @@ check_libc()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    read(fd, buf, 256);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2227,7 +2372,9 @@ check_libc()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    write(fd, buf, 256);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2254,6 +2401,7 @@ check_libc()
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    fsync(fd);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2278,9 +2426,8 @@ check_libc()
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    gid_t g_list[256];" >> $_CONFIG_CSRC
+    echo "    getgroups(256, g_list);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2300,16 +2447,13 @@ check_libc()
 
     # POSIX usleep()
     echo -n "checking for POSIX function usleep (unistd.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    usleep(1000);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -D_DEFAULT_SOURCE -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2341,10 +2485,15 @@ check_libc()
     echo -n "checking for POSIX function ioctl (sys/ioctl.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     echo "#include <fcntl.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <sys/ioctl.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    int ret;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    ioctl(fd, FIONREAD, &ret);;" >> $_CONFIG_CSRC
+    echo "    if (ret)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2365,12 +2514,15 @@ check_libc()
 
     # POSIX cfsetospeed()
     echo -n "checking for POSIX function cfsetospeed (termios.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <termios.h>" >> $_CONFIG_CSRC
     echo "#include <fcntl.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    struct termios options;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    cfsetospeed(&options, B0);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2391,12 +2543,15 @@ check_libc()
 
     # POSIX cfsetispeed()
     echo -n "checking for POSIX function cfsetispeed (termios.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <termios.h>" >> $_CONFIG_CSRC
     echo "#include <fcntl.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    struct termios options;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    cfsetispeed(&options, B0);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2417,12 +2572,15 @@ check_libc()
 
     # POSIX tcgetattr()
     echo -n "checking for POSIX function tcgetattr (termios.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <termios.h>" >> $_CONFIG_CSRC
     echo "#include <fcntl.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    struct termios options;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    tcgetattr(fd, &options);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2443,12 +2601,15 @@ check_libc()
 
     # POSIX tcsetattr()
     echo -n "checking for POSIX function tcsetattr (termios.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <termios.h>" >> $_CONFIG_CSRC
     echo "#include <fcntl.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    int fd;" >> $_CONFIG_CSRC
+    echo "    struct termios options;" >> $_CONFIG_CSRC
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
+    echo "    tcsetattr(fd, TCSANOW, &options);" >> $_CONFIG_CSRC
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
@@ -2467,15 +2628,16 @@ check_libc()
         rm -Rf $_CONFIG_COBJ
     fi
 
-    # POSIX tcsetattr()
+    # POSIX getgrnam()
     echo -n "checking for POSIX function getgrnam (grp.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
+    echo "#include <grp.h>" >> $_CONFIG_CSRC
     echo "#include <unistd.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    struct group *g;" >> $_CONFIG_CSRC
+    echo "    g = getgrnam(\"dialout\");" >> $_CONFIG_CSRC
+    echo "    if (g)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2493,15 +2655,14 @@ check_libc()
         rm -Rf $_CONFIG_COBJ
     fi
 
-    # POSIX pthread_mutex_init()
+    # POSIX pthread_mutex_init() TODO
     echo -n "checking for POSIX function pthread_mutex_init (pthread.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
-    echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <pthread.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_t mutex;" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_init(&mutex, NULL);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_destroy(&mutex);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2534,13 +2695,12 @@ check_libc()
 
     # POSIX pthread_mutex_destroy()
     echo -n "checking for POSIX function pthread_mutex_destroy (pthread.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
-    echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <pthread.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_t mutex;" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_init(&mutex, NULL);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_destroy(&mutex);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2573,13 +2733,13 @@ check_libc()
 
     # POSIX pthread_mutex_lock()
     echo -n "checking for POSIX function pthread_mutex_lock (pthread.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
-    echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <pthread.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_t mutex;" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_init(&mutex, NULL);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_lock(&mutex);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_destroy(&mutex);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2612,13 +2772,13 @@ check_libc()
 
     # POSIX pthread_mutex_unlock()
     echo -n "checking for POSIX function pthread_mutex_unlock (pthread.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
-    echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <pthread.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_t mutex;" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_init(&mutex, NULL);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_unlock(&mutex);" >> $_CONFIG_CSRC
+    echo "    pthread_mutex_destroy(&mutex);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2651,13 +2811,19 @@ check_libc()
 
     # POSIX pthread_create()
     echo -n "checking for POSIX function pthread_create (pthread.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
-    echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <pthread.h>" >> $_CONFIG_CSRC
+    echo "#include <stddef.h>" >> $_CONFIG_CSRC
+    echo "void *bar(void *args)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    if (args)" >> $_CONFIG_CSRC
+    echo "        return NULL;" >> $_CONFIG_CSRC
+    echo "    return NULL;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    pthread_t thread;" >> $_CONFIG_CSRC
+    echo "    pthread_create(&thread, NULL, bar, NULL);" >> $_CONFIG_CSRC
+    echo "    pthread_join(thread, NULL);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2690,13 +2856,19 @@ check_libc()
 
     # POSIX pthread_join()
     echo -n "checking for POSIX function pthread_join (pthread.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
-    echo "#include <fcntl.h>" >> $_CONFIG_CSRC
-    echo "#include <unistd.h>" >> $_CONFIG_CSRC
+    echo "#include <pthread.h>" >> $_CONFIG_CSRC
+    echo "#include <stddef.h>" >> $_CONFIG_CSRC
+    echo "void *bar(void *args)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    if (args)" >> $_CONFIG_CSRC
+    echo "        return NULL;" >> $_CONFIG_CSRC
+    echo "    return NULL;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    int fd;" >> $_CONFIG_CSRC
-    echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
-    echo "    close(fd);" >> $_CONFIG_CSRC
+    echo "    pthread_t thread;" >> $_CONFIG_CSRC
+    echo "    pthread_create(&thread, NULL, bar, NULL);" >> $_CONFIG_CSRC
+    echo "    pthread_join(thread, NULL);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
     $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
@@ -2731,6 +2903,9 @@ check_libc()
 # Check for used functions in libc (Windows)
 check_libc_win()
 {
+    _CROSS=x86_64-w64-mingw32
+    _CC=$_CROSS-gcc
+
     # libc malloc()
     echo -n "checking for libc function malloc (stdlib.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     echo "#include <stdlib.h>" >> $_CONFIG_CSRC
@@ -2741,7 +2916,7 @@ check_libc_win()
     echo "    free(p);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2767,7 +2942,7 @@ check_libc_win()
     echo "    free(p);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2792,7 +2967,7 @@ check_libc_win()
     echo "    free(p);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2816,7 +2991,7 @@ check_libc_win()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2836,11 +3011,14 @@ check_libc_win()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2860,11 +3038,14 @@ check_libc_win()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2884,11 +3065,15 @@ check_libc_win()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fseek(f, 0, SEEK_SET);" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2908,11 +3093,16 @@ check_libc_win()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
-    echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fseek(f, 0, SEEK_SET);" >> $_CONFIG_CSRC
+    echo "    ftell(f);" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2932,11 +3122,40 @@ check_libc_win()
     echo "#include <stdio.h>" >> $_CONFIG_CSRC
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
+    echo "    FILE *f;" >> $_CONFIG_CSRC
     echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    f = fopen(\"/dev/ttyS0\", \"rb\");" >> $_CONFIG_CSRC
+    echo "    if (!f)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    fread(buf, 1, 256, f);" >> $_CONFIG_CSRC
+    echo "    fclose(f);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc memset()
+    echo -n "checking for libc function memset (string.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <string.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    memset(buf, 0, 256);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2960,7 +3179,7 @@ check_libc_win()
     echo "    ret = strlen(\"abc\");" >> $_CONFIG_CSRC
     echo "    return (int) ret;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -2984,7 +3203,7 @@ check_libc_win()
     echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3005,10 +3224,11 @@ check_libc_win()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    char buf[256];" >> $_CONFIG_CSRC
-    echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
+    echo "    memset(buf, 0, 256);" >> $_CONFIG_CSRC
+    echo "    strcat(buf, \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3032,7 +3252,7 @@ check_libc_win()
     echo "    printf(\"%s\", strerror(0));" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3063,7 +3283,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3094,7 +3314,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3135,7 +3355,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return ret;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3176,7 +3396,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return ret;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3208,7 +3428,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3241,7 +3461,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3262,6 +3482,7 @@ check_libc_win()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    DCB dcb = { 0 };" >> $_CONFIG_CSRC
     echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
     echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
@@ -3269,10 +3490,11 @@ check_libc_win()
     echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
     echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    GetCommState(h, &dcb);" >> $_CONFIG_CSRC
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3293,6 +3515,7 @@ check_libc_win()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    DCB dcb = { 0 };" >> $_CONFIG_CSRC
     echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
     echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
@@ -3300,10 +3523,11 @@ check_libc_win()
     echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
     echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    SetCommState(h, &dcb);" >> $_CONFIG_CSRC
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3324,6 +3548,7 @@ check_libc_win()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    DWORD dwfunc = 0;" >> $_CONFIG_CSRC
     echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
     echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
@@ -3331,10 +3556,13 @@ check_libc_win()
     echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
     echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    EscapeCommFunction(h, dwfunc);" >> $_CONFIG_CSRC
+    echo "    if (dwfunc)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3355,6 +3583,7 @@ check_libc_win()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    DWORD dwmstat;;" >> $_CONFIG_CSRC
     echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
     echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
@@ -3362,10 +3591,11 @@ check_libc_win()
     echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
     echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    GetCommModemStatus(h, &dwmstat);" >> $_CONFIG_CSRC
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3386,6 +3616,8 @@ check_libc_win()
     echo "int foo(void)" >> $_CONFIG_CSRC
     echo "{" >> $_CONFIG_CSRC
     echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    COMSTAT comst;" >> $_CONFIG_CSRC
+    echo "    DWORD dwerror;" >> $_CONFIG_CSRC
     echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
     echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
@@ -3393,10 +3625,11 @@ check_libc_win()
     echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
     echo "                   0," >> $_CONFIG_CSRC
     echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    ClearCommError(h, &dwerror, &comst);" >> $_CONFIG_CSRC
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3432,7 +3665,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3472,7 +3705,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3513,7 +3746,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3554,7 +3787,7 @@ check_libc_win()
     echo "    CloseHandle(h);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3590,7 +3823,7 @@ check_libc_win()
     echo "    Sleep(1);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -3617,6 +3850,9 @@ check_libc_win()
             rm -Rf $_CONFIG_COBJ
         fi
     fi
+
+    unset _CC
+    unset _CROSS
 }
 
 
@@ -3631,6 +3867,7 @@ check_pdflatex()
         if [ $_BUILD_DOC -ne 0 ]
         then
             echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            echo "See $_BUILD_DIR/$_BUILD_LOG for details."
             exit 1
         else
             echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -3651,6 +3888,18 @@ generate_config()
     echo "# $_TARGET config.mk: Auto-generated: Please do not edit!!!" > $_BUILD_DIR/$_BUILD_CONFIG
     echo >> $_BUILD_DIR/$_BUILD_CONFIG
     echo "CONFIG_CONFIGURED = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_CHAR = $_CONFIG_SIZEOF_CHAR" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_SHORT = $_CONFIG_SIZEOF_SHORT" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_INT = $_CONFIG_SIZEOF_INT" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_LONG = $_CONFIG_SIZEOF_LONG" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_LONG_LONG = $_CONFIG_SIZEOF_LONG_LONG" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_POINTER = $_CONFIG_SIZEOF_POINTER" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_PTRDIFF_T = $_CONFIG_SIZEOF_PTRDIFF_T" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_FLOAT = $_CONFIG_SIZEOF_FLOAT" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_DOUBLE = $_CONFIG_SIZEOF_DOUBLE" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_LONG_DOUBLE = $_CONFIG_SIZEOF_LONG_DOUBLE" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_SIZE_T = $_CONFIG_SIZEOF_SIZE_T" >> $_BUILD_DIR/$_BUILD_CONFIG
+    echo "CONFIG_SIZEOF_WCHAR_T = $_CONFIG_SIZEOF_WCHAR_T" >> $_BUILD_DIR/$_BUILD_CONFIG
 
     if [ "$_BUILD_OS" = "linux" ]
     then
