@@ -42,8 +42,8 @@ typedef struct _buffer buffer_t;
 
 extern buffer_t *buffer_create(ssize_t len);
 extern int buffer_free(buffer_t *buf);
-extern ssize_t buffer_wr(buffer_t *buf, unsigned char *data, ssize_t len);
-extern ssize_t buffer_rd(buffer_t *buf, unsigned char *data, ssize_t len);
+extern ssize_t buffer_wr(buffer_t *buf, void *data, ssize_t len);
+extern ssize_t buffer_rd(buffer_t *buf, void *data, ssize_t len);
 extern ssize_t buffer_get_len(buffer_t *buf);
 extern ssize_t buffer_get_num(buffer_t *buf);
 extern ssize_t buffer_get_free(buffer_t *buf);

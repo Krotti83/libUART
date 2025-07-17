@@ -28,7 +28,7 @@
 struct _buffer {
     ssize_t b_len;
     ssize_t b_num;
-    unsigned char *b_p;
+    void *b_p;
     ssize_t b_idxr;
     ssize_t b_idxw;
 };
@@ -79,9 +79,11 @@ int buffer_free(buffer_t *buf)
     return BUFFER_ENONE;
 }
 
-ssize_t buffer_wr(buffer_t *buf, unsigned char *data, ssize_t len)
+ssize_t buffer_wr(buffer_t *buf, void *data, ssize_t len)
 {
     ssize_t i;
+    unsigned char *dst;
+    unsigned char *src;
     
     if (!buf) {
         return BUFFER_EINVAL;
@@ -99,11 +101,14 @@ ssize_t buffer_wr(buffer_t *buf, unsigned char *data, ssize_t len)
         return BUFFER_ENOSPC;
     }
     
+    dst = (unsigned char *) buf->b_p;
+    src = (unsigned char *) data;
+
     for (i = 0; i < len; i++) {
         if (buf->b_num == buf->b_len) {
             return BUFFER_ENOSPC;
         } else if (buf->b_num < buf->b_len) {
-            buf->b_p[buf->b_idxw] = data[i];
+            dst[buf->b_idxw] = src[i];
             buf->b_num++;
         
             if (buf->b_idxw < (buf->b_len - 1))
@@ -121,9 +126,11 @@ ssize_t buffer_wr(buffer_t *buf, unsigned char *data, ssize_t len)
     return len;
 }
 
-ssize_t buffer_rd(buffer_t *buf, unsigned char *data, ssize_t len)
+ssize_t buffer_rd(buffer_t *buf, void *data, ssize_t len)
 {
     ssize_t i;
+    unsigned char *dst;
+    unsigned char *src;
     
     if (!buf) {
         return BUFFER_EINVAL;
@@ -137,9 +144,12 @@ ssize_t buffer_rd(buffer_t *buf, unsigned char *data, ssize_t len)
         return BUFFER_ERANGE;
     }
     
+    src = (unsigned char *) buf->b_p;
+    dst = (unsigned char *) data;
+
     for (i = 0; i < len; i++) {
         if (buf->b_num > 0) {
-            data[i] = buf->b_p[buf->b_idxr];
+            dst[i] = src[buf->b_idxr];
             buf->b_num--;
             
             if (buf->b_idxr < (buf->b_len - 1))
