@@ -28,6 +28,11 @@
 #include "version.h"
 #include "util.h"
 
+#ifdef LIBUART_THREADS
+#include "buffer.h"
+#include "thread.h"
+#endif
+
 #include <UART.h>
 
 static int uart_init_done = 0;
@@ -138,9 +143,10 @@ int UART_init(void)
     return UART_ESUCCESS;
 }
 
-uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt)
+uart_t *UART_open_dev(const char *dev, enum e_baud baud, const char *opt)
 {
     uart_t *p;
+    int ret;
     
     p = (uart_t *) malloc(sizeof(uart_t));
     
@@ -176,20 +182,82 @@ uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt)
         free(p);
         return NULL;
     }
+
+#ifdef LIBUART_THREADS
+    p->rx_buffer = buffer_create(DEV_BUFFER_SIZE);
+
+    if (!p->rx_buffer) {
+        return NULL;
+    }
+
+    p->tx_buffer = buffer_create(DEV_BUFFER_SIZE);
+
+    if (!p->tx_buffer) {
+        return NULL;
+    }
+
+    ret = _uart_thread_init(p);
+
+    if (ret != UART_ESUCCESS) {
+        return NULL;
+    }
+
+    ret = _uart_thread_start(p);
+
+    if (ret != UART_ESUCCESS) {
+        return NULL;
+    }
+#endif
     
     return p;
+}
+
+ssize_t UART_get_device_list(size_t len, uart_t **ret_uarts)
+{
+    return 0;
+}
+
+int UART_open(uart_t *uart, enum e_baud baud, const char *opt)
+{
+    return 0;
+}
+
+void UART_free(uart_t *uart)
+{
+    if (!uart)
+        return;
+
+    _uart_flush(uart);
+    _uart_close(uart);
+    free(uart);
+}
+
+void UART_free_device_list(uart_t **uarts, size_t len)
+{
+    size_t i;
+
+    if (!uarts)
+        return;
+
+    for (i = 0; i < len; i++) {
+        if (uarts[i]) {
+            _uart_flush(uarts[i]);
+            _uart_close(uarts[i]);
+            free(uarts[i]);
+        }
+    }
 }
 
 void UART_close(uart_t *uart)
 {
     if (!uart)
         return;
-    
+
+    _uart_flush(uart);
     _uart_close(uart);
-    free(uart);
 }
 
-ssize_t UART_send(uart_t *uart, char *send_buf, size_t len)
+ssize_t UART_send(uart_t *uart, void *send_buf, size_t len)
 {
     if (!uart) {
         _uart_error(NULL, __func__, "invalid UART object");
@@ -209,11 +277,23 @@ ssize_t UART_send(uart_t *uart, char *send_buf, size_t len)
 
         return UART_EINVAL;
     }
-    
+
+#ifndef LIBUART_THREADS
     return _uart_send(uart, send_buf, len);
+#else
+    _uart_thread_lock_tx(uart);
+
+    if (buffer_get_free(uart->tx_buffer) >= (ssize_t) len) {
+        buffer_wr(uart->tx_buffer, send_buf, (ssize_t) len);
+    }
+
+    _uart_thread_unlock_tx(uart);
+
+    return (ssize_t) len;
+#endif
 }
 
-ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len)
+ssize_t UART_recv(uart_t *uart, void *recv_buf, size_t len)
 {
     if (!uart) {
         _uart_error(NULL, __func__, "invalid UART object");
@@ -233,8 +313,20 @@ ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len)
 
         return UART_EINVAL;
     }
-    
+
+#ifndef LIBUART_THREADS
     return _uart_recv(uart, recv_buf, len);
+#else
+    _uart_thread_lock_rx(uart);
+
+    if (buffer_get_num(uart->tx_buffer) >= (ssize_t) len) {
+        buffer_rd(uart->rx_buffer, recv_buf, (ssize_t) len);
+    }
+
+    _uart_thread_unlock_rx(uart);
+
+    return (ssize_t) len;
+#endif
 }
 
 ssize_t UART_puts(uart_t *uart, char *msg)
@@ -292,8 +384,12 @@ int UART_flush(uart_t *uart)
         _uart_error(NULL, __func__, "invalid UART object");
         return UART_EHANDLE;
     }
-    
+
+#ifndef LIBUART_THREADS
     return _uart_flush(uart);
+#else
+
+#endif
 }
 
 int UART_set_baud(uart_t *uart, enum e_baud baud)
