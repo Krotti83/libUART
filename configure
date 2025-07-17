@@ -59,6 +59,7 @@ _BUILD_SHARED=1
 _BUILD_COMPILER=gcc
 _BUILD_OS=linux
 _BUILD_THREADS=0
+_BUILD_DEBUG=0
 
 _INSTALL_PREFIX=/usr/local
 _INSTALL_INCDIR="$_INSTALL_PREFIX/include"
@@ -112,7 +113,7 @@ cleanup()
 show_usage()
 {
     _SCRIPT=$0
-    echo "usage: $_SCRIPT [OPTION]... [VAR=VALUE]..."
+    echo "usage: $(basename $_SCRIPT) [OPTION]... [VAR=VALUE]..."
     
     unset _SCRIPT
 }
@@ -120,17 +121,16 @@ show_usage()
 show_version()
 {
     _SCRIPT=$0
-    echo "$_SCRIPT $_SCRIPT_VERSION for $_TARGET version $_TARGET_VERSION"
+    echo "$(basename $_SCRIPT) $_SCRIPT_VERSION for $_TARGET version $_TARGET_VERSION"
 
     unset _SCRIPT
 }
 
 show_help()
 {
-    echo "\`configure\` configures libUART"
+    echo "$_TARGET \`configure\` script"
     echo
     show_version
-    echo
     show_usage
     echo
     echo "Configuration:"
@@ -148,6 +148,7 @@ show_help()
     echo "                          [default=$_INSTALL_PREFIX]"
     echo
     echo "Optional Features:"
+    echo "  --enable-debug          enable building with debug information [default=no]"
     echo "  --enable-doc            enable building the PDF documentation [default=no]"
     echo "  --enable-threads        enable building with threading support (experimental) [default=no]"
     echo "  --disable-static        disable static library building [default=yes]"
@@ -157,17 +158,34 @@ show_help()
 # Check make utility
 check_make()
 {
-    echo -n "checking for make... "
+    echo -n "checking for make... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which make)
     
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
     
+    unset _RESULT
+}
+
+# Check for wine
+check_wine()
+{
+    echo -n "checking for wine... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which wine)
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        exit 1
+    else
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
+    fi
+
     unset _RESULT
 }
 
@@ -669,126 +687,996 @@ check_compiler_gnu()
 # Check compiler suite for Windows (GCC)
 check_compiler_gnu_win()
 {
-    # Simple check for C preprocessor
-    echo -n "checking for GNU C preprocessor (cpp)... "
-    _RESULT=$(which x86_64-w64-mingw32-cpp)
+    _CROSS=x86_64-w64-mingw32
+    _CC=$_CROSS-gcc
+
+    # Check for C preprocessor
+    echo -n "checking for GNU C preprocessor ($_CROSS-cpp)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CROSS-cpp)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    # Simple check for GCC
-    echo -n "checking for GNU C compiler (gcc)... "
-    _RESULT=$(which x86_64-w64-mingw32-gcc)
+    # Check for GCC
+    echo -n "checking for GNU C compiler ($_CC)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    _RESULT=$(which $_CC)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    # Simple check if GCC can compile and link
-    echo -n "checking whether GNU C compiler (gcc) can compile... "
-    echo "int foo(void){return 0;}" > /tmp/configure_test.c
-    x86_64-w64-mingw32-gcc -c -o /tmp/configure_test.o /tmp/configure_test.c
+    # Check if GCC can compile
+    echo -n "checking whether GNU C compiler ($_CC) can compile... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
-        echo "failed"
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo "yes"
-        rm -Rf /tmp/configure_test.o
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
     fi
 
-    rm -Rf $BUILD_DIR/tmp.c
+    # Check if GCC can create executable
+    echo -n "checking whether GNU C compiler ($_CC) create executable... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check if GCC can compile with -fPIC
+    echo -n "checking whether GNU C compiler ($_CC) can compile with -fPIC... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -fPIC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if GCC can compile create shared library
+    echo -n "checking whether GNU C compiler ($_CC) can create dynamic linked library (DLL)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -shared -Wl,--subsystem,windows -Wl,--out-implib,$_CONFIG_EXEC.lib -Wall -Wextra -Werror -o $_CONFIG_EXEC.dll $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check if GCC accept C99
+    echo -n "checking whether GNU C compiler ($_CC) accept ISO C99 (-std=c99)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -c -std=c99 -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if GCC accept pedantic
+    echo -n "checking whether GNU C compiler ($_CC) accept pedantic (-pedantic)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -c -pedantic -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if GCC accept function-sections
+    echo -n "checking whether GNU C compiler ($_CC) accept function-sections (-ffunction-sections)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -c -ffunction-sections -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if GCC accept data-sections
+    echo -n "checking whether GNU C compiler ($_CC) accept data-sections (-fdata-sections)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -c -fdata-sections -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check for sizeof(char)
+    echo -n "checking for sizeof(char)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(char));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_CHAR=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(short)
+    echo -n "checking for sizeof(short)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(short));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_SHORT=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(int)
+    echo -n "checking for sizeof(int)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(int));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_INT=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(long)
+    echo -n "checking for sizeof(long)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(long));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_LONG=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(long long)
+    echo -n "checking for sizeof(long long)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(long long));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_LONG_LONG=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(void *)
+    echo -n "checking for sizeof(void *)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(void *));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_POINTER=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(ptrdiff_t)
+    echo -n "checking for sizeof(ptrdiff_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stddef.h>" >> $_CONFIG_CSRC
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(ptrdiff_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_PTRDIFF_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(size_t)
+    echo -n "checking for sizeof(size_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stddef.h>" >> $_CONFIG_CSRC
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(size_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_SIZE_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(float)
+    echo -n "checking for sizeof(float)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(float));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_FLOAT=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(double)
+    echo -n "checking for sizeof(double)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(double));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_DOUBLE=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
+    # Check for sizeof(long double)
+    echo -n "checking for sizeof(long double)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%lld\", sizeof(long double));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    $_CC -Wall -Wextra -Werror -o $_CONFIG_EXEC.exe $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$(wine $_CONFIG_EXEC.exe)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_LONG_DOUBLE=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC.exe
+    fi
+
     unset _RESULT
 }
 
 # Check compiler suite (LLVM clang)
 check_compiler_llvm()
 {
-    # Simple check for GCC
-    echo -n "checking for LLVM C compiler (clang)... "
+    # Check for LLVM C compiler
+    echo -n "checking for LLVM C compiler (clang)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which clang)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    # Simple check if GCC can compile and link
-    echo -n "checking whether LLVM C compiler (clang) works... "
-    echo "int foo(void){return 0;}" > /tmp/configure_test.c
-    clang -c -o /tmp/configure_test.o /tmp/configure_test.c
+    # Check if LLVM C compiler can compile
+    echo -n "checking whether LLVM C compiler (clang) can compile... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
-        echo "failed"
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo "yes"
-        rm -Rf /tmp/configure_test.o
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
     fi
 
-    rm -Rf $BUILD_DIR/tmp.c
+    # Check if LLVM C compiler can create executable
+    echo -n "checking whether LLVM C compiler (clang) create executable... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check if LLVM C compiler can compile with -fPIC
+    echo -n "checking whether LLVM C compiler (clang) can compile with -fPIC... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -fPIC -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if LLVM C compiler can compile create shared library
+    echo -n "checking whether LLVM C compiler (clang) can create shared library... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -shared -fPIC -Wl,-soname,configure_test.so -Wall -Wextra -Werror -o $_CONFIG_SOBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if LLVM C compiler accept C99
+    echo -n "checking whether LLVM C compiler (clang) accept ISO C99 (-std=c99)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -c -std=c99 -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if LLVM C compiler accept pedantic
+    echo -n "checking whether LLVM C compiler (clang) accept pedantic (-pedantic)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -c -pedantic -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if LLVM C compiler accept function-sections
+    echo -n "checking whether LLVM C compiler (clang) accept function-sections (-ffunction-sections)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -c -ffunction-sections -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check if LLVM C compiler accept data-sections
+    echo -n "checking whether LLVM C compiler (clang) accept data-sections (-fdata-sections)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -c -fdata-sections -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Check for sizeof(char)
+    echo -n "checking for sizeof(char)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(char));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_CHAR=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(short)
+    echo -n "checking for sizeof(short)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(short));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_SHORT=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(int)
+    echo -n "checking for sizeof(int)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(int));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_INT=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(long)
+    echo -n "checking for sizeof(long)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(long));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_LONG=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(long long)
+    echo -n "checking for sizeof(long long)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(long long));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_LONG_LONG=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(void *)
+    echo -n "checking for sizeof(void *)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(void *));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_POINTER=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(ptrdiff_t)
+    echo -n "checking for sizeof(ptrdiff_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stddef.h>" >> $_CONFIG_CSRC
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(ptrdiff_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_PTRDIFF_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(size_t)
+    echo -n "checking for sizeof(size_t)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stddef.h>" >> $_CONFIG_CSRC
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(size_t));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_SIZE_T=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(float)
+    echo -n "checking for sizeof(float)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(float));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_FLOAT=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(double)
+    echo -n "checking for sizeof(double)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(double));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_DOUBLE=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
+    # Check for sizeof(long double)
+    echo -n "checking for sizeof(long double)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int main(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%ld\", sizeof(long double));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    clang -Wall -Wextra -Werror -o $_CONFIG_EXEC $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        _RESULT=$($_CONFIG_EXEC)
+        echo "$_RESULT" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        _CONFIG_SIZEOF_LONG_DOUBLE=$_RESULT
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_EXEC
+    fi
+
     unset _RESULT
 }
 
 # Check GNU binutils
 check_binutils_gnu()
 {
-    echo -n "checking for GNU Assembler (as)... "
+    echo -n "checking for GNU Assembler (as)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which as)
     
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
     
-    echo -n "checking for GNU linker (ld)... "
+    echo -n "checking for GNU linker (ld)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which ld)
     
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
     
-    echo -n "checking for GNU archiver (ar)... "
+    echo -n "checking for GNU archiver (ar)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which ar)
     
     if [ $? -ne 0 ]
     then
         echo "failed (might not installed)"
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
     
-    echo -n "checking for GNU objdump (objdump)... "
+    echo -n "checking for GNU objdump (objdump)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which objdump)
     
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
     unset _RESULT
@@ -797,59 +1685,64 @@ check_binutils_gnu()
 # Check GNU MINGW binutils
 check_binutils_gnu_win()
 {
-    echo -n "checking for GNU Assembler (as)... "
+    echo -n "checking for GNU Assembler (as)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which x86_64-w64-mingw32-as)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU linker (ld)... "
+    echo -n "checking for GNU linker (ld)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which x86_64-w64-mingw32-ld)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU archiver (ar)... "
+    echo -n "checking for GNU archiver (ar)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which x86_64-w64-mingw32-ar)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU objdump (objdump)... "
+    echo -n "checking for GNU objdump (objdump)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which x86_64-w64-mingw32-objdump)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for GNU windres (windres)... "
+    echo -n "checking for GNU windres (windres)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which x86_64-w64-mingw32-windres)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
     unset _RESULT
@@ -858,55 +1751,55 @@ check_binutils_gnu_win()
 # Check LLVM binutils
 check_binutils_llvm()
 {
-    echo -n "checking for LLVM Assembler (llvm-as)... "
+    echo -n "checking for LLVM Assembler (llvm-as)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which llvm-as)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for LLVM linker (lld)... "
+    echo -n "checking for LLVM linker (lld)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which lld)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for LLVM archiver (llvm-ar)... "
+    echo -n "checking for LLVM archiver (llvm-ar)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which llvm-ar)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
-    echo -n "checking for LLVM objdump (llvm-objdump)... "
+    echo -n "checking for LLVM objdump (llvm-objdump)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which llvm-objdump)
 
     if [ $? -ne 0 ]
     then
-        echo "failed (might not installed)"
+        echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
 
     unset _RESULT
 }
 
-# Check for used functions in libc (GCC)
-check_gnu_libc()
+# Check for used functions in libc (POSIX)
+check_libc()
 {
     # libc malloc()
     echo -n "checking for libc function malloc (stdlib.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
@@ -918,7 +1811,7 @@ check_gnu_libc()
     echo "    free(p);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -944,7 +1837,7 @@ check_gnu_libc()
     echo "    free(p);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -969,7 +1862,7 @@ check_gnu_libc()
     echo "    free(p);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -993,7 +1886,7 @@ check_gnu_libc()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1017,7 +1910,7 @@ check_gnu_libc()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1041,7 +1934,7 @@ check_gnu_libc()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1065,7 +1958,7 @@ check_gnu_libc()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1089,7 +1982,7 @@ check_gnu_libc()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1113,7 +2006,7 @@ check_gnu_libc()
     echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1137,7 +2030,7 @@ check_gnu_libc()
     echo "    ret = strlen(\"abc\");" >> $_CONFIG_CSRC
     echo "    return (int) ret;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1161,7 +2054,7 @@ check_gnu_libc()
     echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1185,7 +2078,7 @@ check_gnu_libc()
     echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1209,7 +2102,7 @@ check_gnu_libc()
     echo "    printf(\"%s\", strerror(0));" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1234,7 +2127,7 @@ check_gnu_libc()
     echo "    fd = open(\"/dev/ttyS0\", O_RDWR | O_NOCTTY | O_NDELAY);" >> $_CONFIG_CSRC
     echo "    return fd;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1260,7 +2153,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1286,7 +2179,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1312,7 +2205,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1338,7 +2231,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1364,7 +2257,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1390,7 +2283,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1416,7 +2309,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1455,7 +2348,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1481,7 +2374,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1507,7 +2400,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1533,7 +2426,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1559,7 +2452,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1585,7 +2478,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1611,7 +2504,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1650,7 +2543,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1689,7 +2582,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1728,7 +2621,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1767,7 +2660,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1806,7 +2699,7 @@ check_gnu_libc()
     echo "    close(fd);" >> $_CONFIG_CSRC
     echo "    return 0;" >> $_CONFIG_CSRC
     echo "}" >> $_CONFIG_CSRC
-    gcc -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+    $_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
 
     if [ $? -ne 0 ]
     then
@@ -1835,23 +2728,915 @@ check_gnu_libc()
     fi
 }
 
-# Simple check if LaTeX PDF compiler is available (optional)
+# Check for used functions in libc (Windows)
+check_libc_win()
+{
+    # libc malloc()
+    echo -n "checking for libc function malloc (stdlib.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdlib.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    void *p;" >> $_CONFIG_CSRC
+    echo "    p = malloc(1);" >> $_CONFIG_CSRC
+    echo "    free(p);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc realloc()
+    echo -n "checking for libc function realloc (stdlib.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdlib.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    void *p;" >> $_CONFIG_CSRC
+    echo "    p = malloc(1);" >> $_CONFIG_CSRC
+    echo "    p = realloc(p, 2);" >> $_CONFIG_CSRC
+    echo "    free(p);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc free()
+    echo -n "checking for libc function free (stdlib.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdlib.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    void *p;" >> $_CONFIG_CSRC
+    echo "    p = malloc(1);" >> $_CONFIG_CSRC
+    echo "    free(p);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc sprintf()
+    echo -n "checking for libc function sprintf (stdio.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc fopen()
+    echo -n "checking for libc function fopen (stdio.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc fclose()
+    echo -n "checking for libc function fclose (stdio.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc fseek()
+    echo -n "checking for libc function fseek (stdio.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc ftell()
+    echo -n "checking for libc function ftell (stdio.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc fread()
+    echo -n "checking for libc function fread (stdio.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    sprintf(buf, \"%s\", \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc strlen()
+    echo -n "checking for libc function strlen (string.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <string.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    size_t ret;" >> $_CONFIG_CSRC
+    echo "    ret = strlen(\"abc\");" >> $_CONFIG_CSRC
+    echo "    return (int) ret;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc strcpy()
+    echo -n "checking for libc function strcpy (string.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <string.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc strcat()
+    echo -n "checking for libc function strcat (string.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <string.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    strcpy(buf, \"abc\");" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # libc strerror()
+    echo -n "checking for libc function strerror (string.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <string.h>" >> $_CONFIG_CSRC
+    echo "#include <stdio.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    printf(\"%s\", strerror(0));" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows CreateFile()
+    echo -n "checking for Windows function CreateFile (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows CloseHandle()
+    echo -n "checking for Windows function CloseHandle (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows ReadFile()
+    echo -n "checking for Windows function ReadFile (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    int ret = 0;" >> $_CONFIG_CSRC
+    echo "    DWORD dwbytesread;" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    ret = ReadFile(h, " >> $_CONFIG_CSRC
+    echo "                   (LPVOID) buf, " >> $_CONFIG_CSRC
+    echo "                   (DWORD) 256," >> $_CONFIG_CSRC
+    echo "                   &dwbytesread," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    if (dwbytesread)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return ret;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows WriteFile()
+    echo -n "checking for Windows function WriteFile (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    int ret = 0;" >> $_CONFIG_CSRC
+    echo "    DWORD dwbyteswritten;" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    char buf[256];" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    ret = WriteFile(h, " >> $_CONFIG_CSRC
+    echo "                    (LPVOID) buf, " >> $_CONFIG_CSRC
+    echo "                    (DWORD) 256," >> $_CONFIG_CSRC
+    echo "                    &dwbyteswritten," >> $_CONFIG_CSRC
+    echo "                    NULL);" >> $_CONFIG_CSRC
+    echo "    if (dwbyteswritten)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return ret;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows FlushFileBuffers()
+    echo -n "checking for Windows function FlushFileBuffers (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    FlushFileBuffers(h);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows GetCommProperties()
+    echo -n "checking for Windows function GetCommProperties (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    COMMPROP prop;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    GetCommProperties(h, &prop);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows GetCommState()
+    echo -n "checking for Windows function GetCommState (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows SetCommState()
+    echo -n "checking for Windows function SetCommState (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows EscapeCommFunction()
+    echo -n "checking for Windows function EscapeCommFunction (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows GetCommModemStatus()
+    echo -n "checking for Windows function GetCommModemStatus (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows ClearCommError()
+    echo -n "checking for Windows function ClearCommError (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateFile((LPCTSTR) \"//COM1\", " >> $_CONFIG_CSRC
+    echo "                   GENERIC_READ | GENERIC_WRITE," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL," >> $_CONFIG_CSRC
+    echo "                   OPEN_EXISTING," >> $_CONFIG_CSRC
+    echo "                   0," >> $_CONFIG_CSRC
+    echo "                   NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+        exit 1
+    else
+        echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+        rm -Rf $_CONFIG_CSRC
+        rm -Rf $_CONFIG_COBJ
+    fi
+
+    # Windows CreateThread()
+    echo -n "checking for Windows function CreateThread (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "DWORD WINAPI bar(LPVOID lpParam)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    if (lpParam)" >> $_CONFIG_CSRC
+    echo "        return 1;" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateThread(NULL, " >> $_CONFIG_CSRC
+    echo "                     0," >> $_CONFIG_CSRC
+    echo "                     bar," >> $_CONFIG_CSRC
+    echo "                     NULL," >> $_CONFIG_CSRC
+    echo "                     0," >> $_CONFIG_CSRC
+    echo "                     NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        if [ $_BUILD_THREADS -eq 1 ]
+        then
+            echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+            exit 1
+        else
+            echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+        fi
+    else
+        if [ $_BUILD_THREADS -ne 1 ]
+        then
+            echo "yes (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        else
+            echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        fi
+    fi
+
+    # Windows CreateMutexA()
+    echo -n "checking for Windows function CreateMutexA (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateMutexA(NULL, " >> $_CONFIG_CSRC
+    echo "                     TRUE," >> $_CONFIG_CSRC
+    echo "                     NULL);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        if [ $_BUILD_THREADS -eq 1 ]
+        then
+            echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+            exit 1
+        else
+            echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+        fi
+    else
+        if [ $_BUILD_THREADS -ne 1 ]
+        then
+            echo "yes (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        else
+            echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        fi
+    fi
+
+    # Windows ReleaseMutex()
+    echo -n "checking for Windows function ReleaseMutex (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateMutexA(NULL, " >> $_CONFIG_CSRC
+    echo "                     TRUE," >> $_CONFIG_CSRC
+    echo "                     NULL);" >> $_CONFIG_CSRC
+    echo "    ReleaseMutex(h);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        if [ $_BUILD_THREADS -eq 1 ]
+        then
+            echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+            exit 1
+        else
+            echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+        fi
+    else
+        if [ $_BUILD_THREADS -ne 1 ]
+        then
+            echo "yes (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        else
+            echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        fi
+    fi
+
+    # Windows WaitForSingleObject()
+    echo -n "checking for Windows function WaitForSingleObject (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    HANDLE h;" >> $_CONFIG_CSRC
+    echo "    h = CreateMutexA(NULL, " >> $_CONFIG_CSRC
+    echo "                     TRUE," >> $_CONFIG_CSRC
+    echo "                     NULL);" >> $_CONFIG_CSRC
+    echo "    WaitForSingleObject(h, 5000);" >> $_CONFIG_CSRC
+    echo "    CloseHandle(h);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        if [ $_BUILD_THREADS -eq 1 ]
+        then
+            echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+            exit 1
+        else
+            echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+        fi
+    else
+        if [ $_BUILD_THREADS -ne 1 ]
+        then
+            echo "yes (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        else
+            echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        fi
+    fi
+
+    # Windows Sleep()
+    echo -n "checking for Windows function Sleep (windows.h)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
+    echo "#include <windows.h>" >> $_CONFIG_CSRC
+    echo "int foo(void)" >> $_CONFIG_CSRC
+    echo "{" >> $_CONFIG_CSRC
+    echo "    Sleep(1);" >> $_CONFIG_CSRC
+    echo "    return 0;" >> $_CONFIG_CSRC
+    echo "}" >> $_CONFIG_CSRC
+    x86_64-w64-mingw32-$_BUILD_COMPILER -c -Wall -Wextra -Werror -o $_CONFIG_COBJ $_CONFIG_CSRC 2>> $_BUILD_DIR/$_BUILD_LOG
+
+    if [ $? -ne 0 ]
+    then
+        if [ $_BUILD_THREADS -eq 1 ]
+        then
+            echo "failed" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            cat $_CONFIG_CSRC >> $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            echo "See $_BUILD_DIR/$_BUILD_LOG for details."
+            exit 1
+        else
+            echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+        fi
+    else
+        if [ $_BUILD_THREADS -ne 1 ]
+        then
+            echo "yes (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        else
+            echo "yes" | tee -a $_BUILD_DIR/$_BUILD_LOG
+            rm -Rf $_CONFIG_CSRC
+            rm -Rf $_CONFIG_COBJ
+        fi
+    fi
+}
+
+
+# Check if LaTeX PDF compiler is available (optional)
 check_pdflatex()
 {
-    echo -n "checking for LaTeX PDF compiler (pdflatex)... "
+    echo -n "checking for LaTeX PDF compiler (pdflatex)... " | tee -a $_BUILD_DIR/$_BUILD_LOG
     _RESULT=$(which pdflatex)
     
     if [ $? -ne 0 ]
     then
         if [ $_BUILD_DOC -ne 0 ]
         then
-            echo "failed (might not installed)"
+            echo "failed (might not installed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
             exit 1
         else
-            echo "warning (not needed)"
+            echo "no (not needed)" | tee -a $_BUILD_DIR/$_BUILD_LOG
         fi
     else
-        echo $_RESULT
+        echo $_RESULT | tee -a $_BUILD_DIR/$_BUILD_LOG
     fi
     
     unset _RESULT
@@ -1881,6 +3666,13 @@ generate_config()
     elif [ "$_BUILD_COMPILER" = "clang" ]
     then
         echo "CONFIG_BUILD_COMPILER = clang" >> $_BUILD_DIR/$_BUILD_CONFIG
+    fi
+
+    if [ $_BUILD_DEBUG -eq 1 ]
+    then
+        echo "CONFIG_BUILD_DEBUG = yes" >> $_BUILD_DIR/$_BUILD_CONFIG
+    else
+        echo "CONFIG_BUILD_DEBUG = no" >> $_BUILD_DIR/$_BUILD_CONFIG
     fi
 
     if [ $_BUILD_DOC -eq 1 ]
@@ -1956,6 +3748,10 @@ else
             _BUILD_DIR=$(echo $1 | sed 's/^--build-dir=\([[:print:]]\+\)/\1/g')
             shift
             ;;
+        --enable-debug)
+            _BUILD_DEBUG=1
+            shift
+            ;;
         --enable-doc)
             _BUILD_DOC=1
             shift
@@ -1999,9 +3795,11 @@ then
         exit 1
     elif [ "$_BUILD_COMPILER" = "gcc" ]
     then
+        check_wine
         check_make
         check_binutils_gnu_win
         check_compiler_gnu_win
+        check_libc_win
     else
         echo "Unsupported compiler suite ($_BUILD_COMPILER)!!!" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
@@ -2013,12 +3811,13 @@ then
         check_make
         check_binutils_gnu
         check_compiler_gnu
-        check_gnu_libc
+        check_libc
     elif [ "$_BUILD_COMPILER" = "clang" ]
     then
         check_make
         check_binutils_llvm
         check_compiler_llvm
+        check_libc
     else
         echo "Unsupported compiler suite ($_BUILD_COMPILER)!!!" | tee -a $_BUILD_DIR/$_BUILD_LOG
         exit 1
