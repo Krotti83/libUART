@@ -24,8 +24,12 @@
 #include <unistd.h>
 
 #include "system.h"
+#include "buffer.h"
 
 #include <UART.h>
+
+#define THREAD_SLEEP_1MS        1000
+#define THREAD_BUFFER_SIZE      4096
 
 int _uart_thread_init(uart_t *uart)
 {
@@ -62,22 +66,30 @@ void *worker_thread_rx(void *p)
 {
     int run = 1;
     uart_t *uart = (uart_t *) p;
+    ssize_t len;
+    ssize_t ret;
+    unsigned char buf[THREAD_BUFFER_SIZE];
 
     while (run) {
-        usleep(100);
         pthread_mutex_lock(&uart->rx_lock);
 
-        // TODO
+        len = buffer_get_free(uart->rx_buffer);
+
+        if (len > 1) {
+            ret = read(uart->fd, buf, len);
+            buffer_wr(uart->rx_buffer, buf, ret);
+        }
 
         pthread_mutex_unlock(&uart->rx_lock);
-
         pthread_mutex_lock(&uart->rx_mutex);
 
         if (!uart->rx_thread_run) {
             run = 0;
+            break;
         }
 
         pthread_mutex_unlock(&uart->rx_mutex);
+        usleep(THREAD_SLEEP_1MS);
     }
 
     return UART_ESUCCESS;
@@ -87,22 +99,33 @@ void *worker_thread_tx(void *p)
 {
     int run = 1;
     uart_t *uart = (uart_t *) p;
+    ssize_t ret;
+    unsigned char buf[THREAD_BUFFER_SIZE];
+    ssize_t len;
+
 
     while (run) {
-        usleep(100);
         pthread_mutex_lock(&uart->tx_lock);
+        len = buffer_get_num(uart->tx_buffer);
 
-        // TODO
+        if (len >= THREAD_BUFFER_SIZE) {
+            buffer_rd(uart->tx_buffer, buf, THREAD_BUFFER_SIZE);
+            ret = write(uart->fd, buf, THREAD_BUFFER_SIZE);
+        } else if (len > 1) {
+            buffer_rd(uart->tx_buffer, buf, len);
+            ret = write(uart->fd, buf, len);
+        }
 
         pthread_mutex_unlock(&uart->tx_lock);
-
         pthread_mutex_lock(&uart->tx_mutex);
 
         if (!uart->tx_thread_run) {
             run = 0;
+            break;
         }
 
         pthread_mutex_unlock(&uart->tx_mutex);
+        usleep(THREAD_SLEEP_1MS);
     }
 
     return NULL;
