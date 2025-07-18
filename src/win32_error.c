@@ -45,6 +45,7 @@ void _uart_error(struct _uart_ctx *ctx,
     if (!uart) {
         ctx->error = error;
         memset(ctx->errormsg, 0, UART_ERRORMAX);
+        ctx->flags |= UART_CTXFERROR;
 
         switch (ctx->error) {
             case UART_ESUCCESS:
@@ -237,6 +238,7 @@ void _uart_error(struct _uart_ctx *ctx,
     } else {
         uart->error = error;
         memset(uart->errormsg, 0, UART_ERRORMAX);
+        uart->flags |= UART_FERROR;
 
         switch (uart->error) {
             case UART_EINVAL:
