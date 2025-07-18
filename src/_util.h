@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _LIBUART_UTIL_H
-#define _LIBUART_UTIL_H
+#ifndef _LIBUART_INTERNAL_UTIL_H
+#define _LIBUART_INTERNAL_UTIL_H
 
 #define STRINGIFY(x)    #x
 #define TOSTRING(x)     STRINGIFY(x)
