@@ -20,17 +20,17 @@
  *
  */
 
-#ifndef _LIBUART_THREAD_H
-#define _LIBUART_THREAD_H
+#ifndef _LIBUART_INTERNAL_THREAD_H
+#define _LIBUART_INTERNAL_THREAD_H
 
-#include "system.h"
+#include "_uart.h"
 
-extern int _uart_thread_init(uart_t *uart);
-extern int _uart_thread_start(uart_t *uart);
-extern int _uart_thread_stop(uart_t *uart);
-extern void _uart_thread_lock_rx(uart_t *uart);
-extern void _uart_thread_lock_tx(uart_t *uart);
-extern void _uart_thread_unlock_rx(uart_t *uart);
-extern void _uart_thread_unlock_tx(uart_t *uart);
+extern int _uart_thread_init(struct _uart_ctx *ctx, struct _uart *uart);
+extern int _uart_thread_start(struct _uart_ctx *ctx, struct _uart *uart);
+extern int _uart_thread_stop(struct _uart_ctx *ctx, struct _uart *uart);
+extern void _uart_thread_lock_rx(struct _uart_ctx *ctx, struct _uart *uart);
+extern void _uart_thread_lock_tx(struct _uart_ctx *ctx, struct _uart *uart);
+extern void _uart_thread_unlock_rx(struct _uart_ctx *ctx, struct _uart *uart);
+extern void _uart_thread_unlock_tx(struct _uart_ctx *ctx, struct _uart *uart);
 
 #endif
