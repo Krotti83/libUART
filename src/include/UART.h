@@ -54,6 +54,7 @@
 #define UART_EPERM          (-12)   /* Access permission */
 #define UART_EHANDLE        (-13)   /* Invalid UART object/handle */
 #define UART_ECTX           (-14)   /* Invalid context */
+#define UART_EBUF           (-15)   /* Buffer full or empty (only with threading support) */
 
 struct _uart_ctx;
 typedef struct _uart_ctx uart_ctx_t;
@@ -198,6 +199,7 @@ extern int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
 
 /* Send data over the UART interface */
 extern ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, void *send_buf, size_t len);
+
 /* Receive data from the UART interface */
 extern ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
 
@@ -326,6 +328,7 @@ extern LIBUART_API int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
 
 /* Send data over the UART interface */
 extern LIBUART_API ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, void *send_buf, size_t len);
+
 /* Receive data from the UART interface */
 extern LIBUART_API ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
 
@@ -385,8 +388,8 @@ extern LIBUART_API int UART_set_flowctrl(uart_ctx_t *ctx, uart_t *uart, enum e_f
 /* Get flow control from the UART interface */
 extern LIBUART_API int UART_get_flowctrl(uart_ctx_t *ctx, uart_t *uart, int *ret_flow_ctrl);
 
-/* Get the underlying file descriptor from the UART interface */
-extern LIBUART_API int UART_get_fd(uart_ctx_t *ctx, uart_t *uart, int *ret_fd);
+/* Get the underlying file handle from the UART interface */
+extern LIBUART_API int UART_get_handle(uart_ctx_t *ctx, uart_t *uart, HANDLE *ret_h);
 
 /* Get the device name from the UART interface */
 extern LIBUART_API int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_dev);
