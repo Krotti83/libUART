@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "buffer.h"
+#include "_buffer.h"
 
 struct _buffer {
     ssize_t b_len;

@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _LIBUART_BUFFER_H
-#define _LIBUART_BUFFER_H
+#ifndef _LIBUART_INTERNAL_BUFFER_H
+#define _LIBUART_INTERNAL_BUFFER_H
 
 #include <stddef.h>
 
