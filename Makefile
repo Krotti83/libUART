@@ -84,7 +84,7 @@ LDFLAGS			+= -Wl,--gc-sections
 LDFLAGS			+= -Wl,--no-warn-rwx-segments
 
 # Dynamic GNU ld flags
-LDFLAGS_DYN		+= -Wl,-soname,$(TARGET_DYNAMIC).0.1
+LDFLAGS_DYN		+= -Wl,-soname,$(TARGET_DYNAMIC).0.2
 LDFLAGS_DYN		+= -Wl,-shared
 LDFLAGS_DYN		+= -Wl,-Bdynamic
 
@@ -166,10 +166,10 @@ endif
 ifeq ($(CONFIG_BUILD_SHARED),yes)
 ifneq ($(CONFIG_BUILD_OS),win32)
 libuart_dynamic: $(LIBUART_DCOBJ)
-	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
+	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2"
 	@$(CC) -shared $(CCFLAGS) $(CCFLAGS_DYN) \
 	$(LDFLAGS) $(LDFLAGS_DYN) \
-	-o $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1 \
+	-o $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2 \
 	$(LIBUART_DCOBJ)
 
 # Compile C sources
@@ -210,7 +210,7 @@ ifneq ($(CONFIG_BUILD_OS),win32)
 	@$(INSTALL) -m 644 -D $(BUILD_DIR)/UART.h $(INSTALL_INCDIR)
 	@$(INSTALL) -d $(INSTALL_LIBDIR)
 ifeq ($(CONFIG_BUILD_SHARED),yes)
-	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so.0.1 $(INSTALL_LIBDIR)
+	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so.0.2 $(INSTALL_LIBDIR)
 	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so.0 $(INSTALL_LIBDIR)
 	@$(INSTALL) -m 755 -D $(BUILD_DIR)/*.so $(INSTALL_LIBDIR)
 endif
@@ -219,7 +219,7 @@ ifeq ($(CONFIG_BUILD_STATIC),yes)
 endif
 ifeq ($(CONFIG_BUILD_DOC),yes)
 	@$(INSTALL) -d $(INSTALL_DOCDIR)
-	@$(INSTALL) -m 644 -D $(BUILD_DIR)/doc/libUART.pdf $(INSTALL_DOCDIR)
+	@$(INSTALL) -m 644 -D $(BUILD_DIR)/libUART.pdf $(INSTALL_DOCDIR)
 endif
 endif
 
@@ -272,7 +272,7 @@ endif
 ifeq ($(CONFIG_BUILD_SHARED),yes)
 .PHONY: link_dynamic
 link_dynamic:
-	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0 -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0.1"
+	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0 -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2"
 	@$(LN) $(TARGET_DYNAMIC).0.1 $(BUILD_DIR)/$(TARGET_DYNAMIC).0
 	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC) -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0"
 	@$(LN) $(TARGET_DYNAMIC).0 $(BUILD_DIR)/$(TARGET_DYNAMIC)
