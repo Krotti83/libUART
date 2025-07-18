@@ -272,12 +272,6 @@ extern int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_dev);
 /* Get the available bytes in the receive channel from the UART interface */
 extern int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num);
 
-/* Get the last error number from the UART interface */
-extern int UART_get_errro(uart_ctx_t *ctx, uart_t *uart);
-
-/* Get the last error message from the UART interface */
-extern char *UART_get_errormsg(uart_ctx_t *ctx, uart_t *uart);
-
 /* Get last context error number */
 extern int UART_get_ctxerrro(uart_ctx_t *ctx);
 
@@ -400,12 +394,6 @@ extern LIBUART_API int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_de
 
 /* Get the available bytes in the receive channel from the UART interface */
 extern LIBUART_API int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num);
-
-/* Get the last error number from the UART interface */
-extern LIBUART_API int UART_get_errro(uart_ctx_t *ctx, uart_t *uart);
-
-/* Get the last error message from the UART interface */
-extern LIBUART_API char *UART_get_errormsg(uart_ctx_t *ctx, uart_t *uart);
 
 /* Get last context error number */
 extern LIBUART_API int UART_get_ctxerrro(uart_ctx_t *ctx);
