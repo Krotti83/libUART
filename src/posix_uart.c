@@ -730,8 +730,7 @@ int _uart_init_databits(struct _uart_ctx *ctx, struct _uart *uart)
         return UART_ESYSAPI;
     }
     
-    uart->error = UART_ESUCCESS;
-    return 0;
+    return UART_ESUCCESS;
 }
 
 int _uart_init_parity(struct _uart_ctx *ctx, struct _uart *uart)
@@ -830,8 +829,7 @@ int _uart_init_stopbits(struct _uart_ctx *ctx, struct _uart *uart)
         return UART_ESYSAPI;
     }
     
-    uart->error = UART_ESUCCESS;
-    return 0;
+    return UART_ESUCCESS;
 }
 
 int _uart_init_flow(struct _uart_ctx *ctx, struct _uart *uart)
@@ -881,8 +879,7 @@ int _uart_init_flow(struct _uart_ctx *ctx, struct _uart *uart)
         return UART_ESYSAPI;
     }
     
-    uart->error = UART_ESUCCESS;
-    return 0;
+    return UART_ESUCCESS;
 }
 
 int _uart_init(struct _uart_ctx *ctx)
@@ -1200,6 +1197,7 @@ int _uart_close(struct _uart_ctx *ctx, struct _uart *uart)
     return UART_ESUCCESS;
 }
 
+#ifndef LIBUART_THREADS
 ssize_t _uart_send(struct _uart_ctx *ctx, struct _uart *uart, void *send_buf, size_t len)
 {
     ssize_t ret;
@@ -1259,6 +1257,7 @@ ssize_t _uart_recv(struct _uart_ctx *ctx, struct _uart *uart, void *recv_buf, si
 
     return ret;
 }
+#endif
 
 int _uart_flush(struct _uart_ctx *ctx, struct _uart *uart)
 {
