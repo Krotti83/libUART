@@ -21,70 +21,621 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 
 #include <windows.h>
 
-#include "error.h"
-#include "version.h"
+#include "_uart.h"
+#include "_version.h"
 
 #include <UART.h>
 
-#define UART_EMSGLEN        256
-
-void _uart_error(struct _uart *uart, const char *func, const char *err_msg)
+void _uart_error(struct _uart_ctx *ctx,
+                 struct _uart *uart,
+                 int error,
+                 const char *error_func,
+                 const char *error_msg)
 {
-    char buf[UART_EMSGLEN];
     DWORD dwError;
     LPVOID lpvError;
 
-    if (uart->err_msg_len != 0) {
-        uart->err_msg = (char *) malloc(UART_EMSGLEN);
+    if (!ctx)
+        return;
 
-        if (!uart->err_msg) {
-            uart->error = UART_ENOMEM;
-            return;
+    if (!uart) {
+        ctx->error = error;
+        memset(ctx->errormsg, 0, UART_ERRORMAX);
+
+        switch (ctx->error) {
+            case UART_ESUCCESS:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: success (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: success",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "success (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "success");
+                    }
+                }
+
+                break;
+            case UART_EINVAL:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: invalid argument (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: invalid argument",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "invalid argument (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "invalid argument");
+                    }
+                }
+
+                break;
+            case UART_ENOMEM:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: no free memory (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: no free memory",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "no free memory (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "no free memory");
+                    }
+                }
+
+                break;
+            case UART_ESYSAPI:
+                dwError = GetLastError();
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+                              FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                              FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL,
+                              dwError,
+                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPTSTR) &lpvError,
+                              0,
+                              NULL);
+
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: failed: %s (%s)",
+                                 error_func,
+                                 error_msg,
+                                 (char *) lpvError);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: failed (%s)",
+                                 error_func,
+                                 (char *) lpvError);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "failed: %s (%s)",
+                                 error_msg,
+                                 (char *) lpvError);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "failed (%s)",
+                                 (char *) lpvError);
+                    }
+                }
+
+                LocalFree(lpvError);
+                break;
+            case UART_EPERM:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: insufficient permissions (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: insufficient permissions",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "insufficient permissions (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "insufficient permissions");
+                    }
+                }
+
+                break;
+            case UART_ECTX:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: invalid context (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: invalid context",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "invalid context (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "invalid context");
+                    }
+                }
+
+                break;
+            default:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: unknown error code (%d) (%s)",
+                                 error_func,
+                                 ctx->error,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "%s: unknown error code (%d)",
+                                 error_func,
+                                 ctx->error);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "unknown error code (%d) (%s)",
+                                 ctx->error,
+                                 error_msg);
+                    } else {
+                        snprintf(ctx->errormsg, UART_ERRORMAX,
+                                 "unknown error code (%d)",
+                                 ctx->error);
+                    }
+                }
         }
+    } else {
+        uart->error = error;
+        memset(uart->errormsg, 0, UART_ERRORMAX);
 
-        uart->err_msg_len = UART_EMSGLEN;
+        switch (uart->error) {
+            case UART_EINVAL:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid argument (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid argument",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid argument (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid argument");
+                    }
+                }
+
+                break;
+            case UART_ENOMEM:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: no free memory (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: no free memory",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "no free memory (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "no free memory");
+                    }
+                }
+
+                break;
+            case UART_ESYSAPI:
+                dwError = GetLastError();
+                FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+                              FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                              FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL,
+                              dwError,
+                              MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                              (LPTSTR) &lpvError,
+                              0,
+                              NULL);
+
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: failed: %s (%s)",
+                                 error_func,
+                                 error_msg,
+                                 (char *) lpvError);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: failed (%s)",
+                                 error_func,
+                                 (char *) lpvError);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "failed: %s (%s)",
+                                 error_msg,
+                                 (char *) lpvError);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "failed (%s)",
+                                 (char *) lpvError);
+                    }
+                }
+
+                LocalFree(lpvError);
+                break;
+            case UART_EOPT:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid option (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid option",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid option (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid option");
+                    }
+                }
+
+                break;
+            case UART_EDEV:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid device (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid device",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid device (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid device");
+                    }
+                }
+
+                break;
+            case UART_EBAUD:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid baud rate (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid baud rate",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid baud rate (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid baud rate");
+                    }
+                }
+
+                break;
+            case UART_EDATA:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid data bits (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid data bits",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid data bits (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid data bits");
+                    }
+                }
+
+                break;
+            case UART_EPARITY:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid parity (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid parity",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid parity (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid parity");
+                    }
+                }
+
+                break;
+            case UART_ESTOP:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid stop bits (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid stop bits",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid stop bits (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid stop bits");
+                    }
+                }
+
+                break;
+            case UART_EFLOW:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid flow control (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid flow control",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid flow control (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid flow control");
+                    }
+                }
+
+                break;
+            case UART_EPIN:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid pin (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid pin",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid pin (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid pin");
+                    }
+                }
+
+                break;
+            case UART_EPERM:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: insufficient permissions (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: insufficient permissions",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "insufficient permissions (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "insufficient permissions");
+                    }
+                }
+
+                break;
+            case UART_EHANDLE:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid handle (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid handle",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid handle (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid handle");
+                    }
+                }
+
+                break;
+            case UART_ECTX:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid context (%s)",
+                                 error_func,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: invalid context",
+                                 error_func);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid context (%s)",
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "invalid context");
+                    }
+                }
+
+                break;
+            default:
+                if (error_func) {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: unknown error code (%d) (%s)",
+                                 error_func,
+                                 uart->error,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "%s: unknown error code (%d)",
+                                 error_func,
+                                 uart->error);
+                    }
+                } else {
+                    if (error_msg) {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "unknown error code (%d) (%s)",
+                                 uart->error,
+                                 error_msg);
+                    } else {
+                        snprintf(uart->errormsg, UART_ERRORMAX,
+                                 "unknown error code (%d)",
+                                 uart->error);
+                    }
+                }
+        }
+    }
+}
+
+void _uart_perror(struct _uart_ctx *ctx,
+                  struct _uart *uart)
+{
+    if (!ctx) {
+        return;
     }
 
-    if (func)
-        sprintf(uart->err_msg, "[%s] error: %s(): ", LIBUART_NAME, func);
-    else
-        sprintf(uart->err_msg, "[%s] error: ", LIBUART_NAME);
-
-    if (err_msg) {
-        if (errno != 0) {
-            dwError = GetLastError();
-            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_IGNORE_INSERTS,
-            NULL,
-            dwError,
-            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                          (LPTSTR) &lpvError,
-                          0,
-                          NULL);
-            sprintf(buf, "%s (%s)\r\n", err_msg, (char *) lpvError);
-            LocalFree(lpvError);
-        } else {
-            sprintf(buf, "%s\n", err_msg);
-        }
-    } else
-        sprintf(buf, "\n");
-
-    if ((strlen(uart->err_msg) + strlen(buf)) < (size_t) uart->err_msg_len)
-        strcat(uart->err_msg, buf);
-    else {
-        uart->err_msg = (char *) realloc(uart->err_msg, uart->err_msg_len + UART_EMSGLEN);
-
-        if (!uart->err_msg) {
-            uart->error = UART_ENOMEM;
-            return;
-        }
-
-        uart->err_msg_len += UART_EMSGLEN;
-        strcat(uart->err_msg, buf);
+    if (!uart) {
+        fprintf(stderr, "%s: context error: %s",
+                LIBUART_NAME,
+                ctx->errormsg);
+    } else {
+        fprintf(stderr, "%s: %s: device error: %s",
+                LIBUART_NAME,
+                uart->dev,
+                uart->errormsg);
     }
 }
