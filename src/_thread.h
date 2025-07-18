@@ -28,9 +28,9 @@
 extern int _uart_thread_init(struct _uart_ctx *ctx, struct _uart *uart);
 extern int _uart_thread_start(struct _uart_ctx *ctx, struct _uart *uart);
 extern int _uart_thread_stop(struct _uart_ctx *ctx, struct _uart *uart);
-extern void _uart_thread_lock_rx(struct _uart_ctx *ctx, struct _uart *uart);
-extern void _uart_thread_lock_tx(struct _uart_ctx *ctx, struct _uart *uart);
-extern void _uart_thread_unlock_rx(struct _uart_ctx *ctx, struct _uart *uart);
-extern void _uart_thread_unlock_tx(struct _uart_ctx *ctx, struct _uart *uart);
+extern int _uart_thread_lock_rx(struct _uart_ctx *ctx, struct _uart *uart);
+extern int _uart_thread_lock_tx(struct _uart_ctx *ctx, struct _uart *uart);
+extern int _uart_thread_unlock_rx(struct _uart_ctx *ctx, struct _uart *uart);
+extern int _uart_thread_unlock_tx(struct _uart_ctx *ctx, struct _uart *uart);
 
 #endif
