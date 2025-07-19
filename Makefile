@@ -230,7 +230,8 @@ build_doc:
 	@echo "   [PDFLATEX] $(BUILD_DIR)/$(TARGET).pdf"
 	@$(PDFLATEX) $(PDFLATEXFLAGS) $(BUILD_DIR)/doc/$(TARGET).tex 1>/dev/null
 	@$(MV) $(BUILD_DIR)/doc/$(TARGET).pdf $(BUILD_DIR)/$(TARGET).pdf
-
+	@$(PDFLATEX) $(PDFLATEXFLAGS) $(BUILD_DIR)/doc/$(TARGET).tex 1>/dev/null
+	@$(MV) $(BUILD_DIR)/doc/$(TARGET).pdf $(BUILD_DIR)/$(TARGET).pdf
 endif
 
 # Clean (remove build directory)
