@@ -152,9 +152,11 @@ extern int _uart_get_pin(struct _uart_ctx *ctx,
                          enum e_pins pin,
                          int *state);
 
+#ifndef LIBUART_THREADS
 extern int _uart_get_bytes(struct _uart_ctx *ctx,
                            struct _uart *uart,
                            int *bytes);
+#endif
 
 extern void _uart_error(struct _uart_ctx *ctx,
                         struct _uart *uart,
