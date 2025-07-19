@@ -22,7 +22,7 @@
     stringstyle=\color{red},
     identifierstyle=\bfseries{\color{black}}
 }
-\title{libUART - Easy to use UART library \\ Programming Guide v0.1.1.x (rev. 0)}
+\title{libUART - Easy to use UART library \\ Programming Guide v0.2.0.x (rev. 0)}
 \author{Johannes Krottmayer}
 \begin{document}
 \maketitle
@@ -55,29 +55,101 @@ and enumerations which are required for the library.
 \begin{lstlisting}
 #include <UART.h>
 \end{lstlisting}
+\subsection{Error Codes}
+This section contains all possible error codes returned by the \textbf{libUART}
+functions on failure.
+\begin{tabular}{| c | c | c |}
+\hline
+\multicolumn{3}{|c|}{Error Codes} \\
+\hline
+Symbol & Value & Meaning \\
+\hline
+UART\_ESUCCESS & 0 & No error (success) \\
+UART\_EINVAL & -1 & Invalid argument \\
+UART\_ENOMEM & -2 & No free memory \\
+UART\_ESYSAPI & -3 & System API call error \\
+UART\_EOPT & -4 & Invalid option \\
+UART\_EDEV & -5 & Invalid device \\
+UART\_EBAUD & -6 & Invalid baud rate \\
+UART\_EDATA & -7 & Invalid data bits \\
+UART\_EPARITY & -8 & Invalid parity \\
+UART\_ESTOP & -9 & Invalid stop bits \\
+UART\_EFLOW & -10 & Invalid flow control \\
+UART\_EPIN & -11 & Invalid pin \\
+UART\_EPERM & -12 & Access permission \\
+UART\_EHANDLE & -13 & Invalid UART object/handle \\
+UART\_ECTX & -14 & Invalid context \\
+UART\_EBUF & -15 & Buffer full or empty (only with threading support) \\
+\hline
+\end{tabular}
 \section{Basic Functions}
 This section contains basic functions for working with the library, such
 as initialization of the library and opening and closing from an \textbf{UART}
 interface.
 \subsection{UART\_init() Function}
-The \textit{UART\_init() function} initializes the \textbf{UART} library.
-This function should always called first before usage of any other
-functions with the library.
+The \textit{UART\_init() function} initializes the \textbf{UART} library and create a
+context. This function should be always called first before usage of any other functions
+from the library, otherwise with invalid context most of the functions failing with an
+error code.
 \subsubsection*{Prototype}
 \begin{lstlisting}
 #include <UART.h>
 
-int UART_init(void);
+int UART_init(uart_ctx_t **ret_ctx);
 \end{lstlisting}
 \subsubsection*{Arguments}
-None
+\begin{enumerate}
+\item Pointer to library context where the new context should be stored.
+\end{enumerate}
 \subsubsection*{Returns}
-Returns \textbf{0} on success, or a negative value on failure.
+Returns \textbf{UART\_ESUCCESS} on success, or an error code on failure.
 \subsubsection*{Usage}
+\begin{lstlisting}
+#include <stdio.h>
+#include <UART.h>
+
+int ret;
+uart_ctx_t *ctx;
+
+ret = UART_init(&ctx);
+
+if (ret != UART_ESUCCESS) {
+    printf("UART_init() failed\n");
+}
+\end{lstlisting}
+\subsection{UART\_free() Function}
+The \textit{UART\_free() function} destroys a \textbf{UART} library context.
+\subsubsection*{Prototype}
 \begin{lstlisting}
 #include <UART.h>
 
-UART_init();
+int UART_free(uart_ctx_t *ctx);
+\end{lstlisting}
+\subsubsection*{Arguments}
+\begin{enumerate}
+\item Pointer to library context
+\end{enumerate}
+\subsubsection*{Returns}
+Returns \textbf{UART\_ESUCCESS} on success, or an error code on failure.
+\subsubsection*{Usage}
+\begin{lstlisting}
+#include <stdio.h>
+#include <UART.h>
+
+int ret;
+uart_ctx_t *ctx;
+
+ret = UART_init(&ctx);
+
+if (ret != UART_ESUCCESS) {
+    printf("UART_init() failed\n");
+}
+
+ret = UART_free(ctx);
+
+if (ret != UART_ESUCCESS) {
+    printf("UART_free() failed\n");
+}
 \end{lstlisting}
 \subsection{UART\_open() Function}
 The \textit{UART\_open() function} opens an \textbf{UART} interface for
