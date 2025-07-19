@@ -1,0 +1,22 @@
+name: Build for Windows on Ubuntu CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: prerequisites
+      run: sudo apt update
+           sudo apt install git wine binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64
+    - name: configure
+      run: ./configure --target=windows
+    - name: make
+      run: make
