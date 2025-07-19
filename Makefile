@@ -165,12 +165,21 @@ endif
 # Link object files
 ifeq ($(CONFIG_BUILD_SHARED),yes)
 ifneq ($(CONFIG_BUILD_OS),win32)
+ifneq ($(CONFIG_BUILD_THREADS),yes)
 libuart_dynamic: $(LIBUART_DCOBJ)
 	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2"
 	@$(CC) -shared $(CCFLAGS) $(CCFLAGS_DYN) \
 	$(LDFLAGS) $(LDFLAGS_DYN) \
 	-o $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2 \
 	$(LIBUART_DCOBJ)
+else
+libuart_dynamic: $(LIBUART_DCOBJ)
+	@echo "   [LD]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2"
+	@$(CC) -shared $(CCFLAGS) $(CCFLAGS_DYN) \
+	$(LDFLAGS) $(LDFLAGS_DYN) \
+	-o $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2 \
+	$(LIBUART_DCOBJ) -lpthread
+endif
 
 # Compile C sources
 $(LIBUART_DCOBJ): %.o: %.c
@@ -274,7 +283,7 @@ ifeq ($(CONFIG_BUILD_SHARED),yes)
 .PHONY: link_dynamic
 link_dynamic:
 	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC).0 -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0.2"
-	@$(LN) $(TARGET_DYNAMIC).0.1 $(BUILD_DIR)/$(TARGET_DYNAMIC).0
+	@$(LN) $(TARGET_DYNAMIC).0.2 $(BUILD_DIR)/$(TARGET_DYNAMIC).0
 	@echo "   [LN]       $(BUILD_DIR)/$(TARGET_DYNAMIC) -> $(BUILD_DIR)/$(TARGET_DYNAMIC).0"
 	@$(LN) $(TARGET_DYNAMIC).0 $(BUILD_DIR)/$(TARGET_DYNAMIC)
 endif
