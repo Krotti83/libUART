@@ -173,6 +173,9 @@ void *worker_thread_tx(void *p)
             if (ret != (ssize_t) len) {
                 _uart_error(args->ctx, args->uart, UART_ESYSAPI, "write", "could not send all data");
                 pthread_mutex_unlock(&args->uart->tx_lock);
+                pthread_mutex_lock(&args->uart->tx_mutex);
+                args->uart->tx_thread_run = 0;
+                pthread_mutex_unlock(&args->uart->tx_mutex);
 
                 return NULL;
             }
