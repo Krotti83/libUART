@@ -76,8 +76,8 @@ struct _uart {
     HANDLE tx_thread;
     HANDLE rx_mutex;
     HANDLE tx_mutex;
-    int rx_mutex_run;
-    int tx_mutex_run;
+    int rx_thread_run;
+    int tx_thread_run;
     HANDLE rx_lock;
     HANDLE tx_lock;
 #endif
