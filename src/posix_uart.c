@@ -937,7 +937,7 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
     int count;
     DIR *dir;
     struct dirent *entry;
-    char *dev[64];
+    char *dev[512];
     int dev_index = 0;
     int i;
 
@@ -1061,6 +1061,15 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
     while (entry) {
         for (i = 0; i < dev_index; i++) {
             if (strncmp(entry->d_name, dev[i], strlen(dev[i])) == 0) {
+                ctx->uarts[ctx->uarts_count] = (struct _uart *) malloc(sizeof(struct _uart));
+
+                if (!ctx->uarts[ctx->uarts_count]) {
+                    _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+
+                    return UART_ENOMEM;
+                }
+
+                memset(ctx->uarts[ctx->uarts_count], 0, sizeof(struct _uart));
                 snprintf(ctx->uarts[ctx->uarts_count]->dev, UART_NAMEMAX, "/dev/%s", entry->d_name);
                 ctx->uarts_count++;
             }
@@ -1396,6 +1405,7 @@ int _uart_get_pin(struct _uart_ctx *ctx, struct _uart *uart, enum e_pins pin, in
     return UART_ESUCCESS;
 }
 
+#ifndef LIBUART_THREADS
 int _uart_get_bytes(struct _uart_ctx *ctx, struct _uart *uart, int *bytes)
 {
     int ret = 0;
@@ -1422,3 +1432,4 @@ int _uart_get_bytes(struct _uart_ctx *ctx, struct _uart *uart, int *bytes)
 
     return UART_ESUCCESS;
 }
+#endif

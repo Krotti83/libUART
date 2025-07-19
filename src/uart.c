@@ -185,6 +185,12 @@ int UART_free(uart_ctx_t *ctx)
         if (ret != UART_ESUCCESS) {
             return ret;
         }
+
+        ret = UART_dev_free(ctx, ctx->uarts[i]);
+
+        if (ret != UART_ESUCCESS) {
+            return ret;
+        }
     }
 
     if (ctx->errormsg) {
@@ -199,18 +205,39 @@ int UART_free(uart_ctx_t *ctx)
 ssize_t UART_get_device_list(uart_ctx_t *ctx, uart_t **ret_uarts)
 {
     int ret;
+    struct _uart *tmp_uarts[UART_DEVMAX];
+    int tmp_uarts_count = 0;
+    int i;
+    int j;
 
     if (!ctx) {
         return UART_ECTX;
     }
 
-    /**
-     * TODO: Clear old device list first.
-     */
+    for (i = 0; i < ctx->uarts_count; i++) {
+        if (ctx->uarts[i]->flags & UART_FOPENED) {
+            tmp_uarts[tmp_uarts_count] = ctx->uarts[i];
+            tmp_uarts_count++;
+        } else {
+            free(ctx->uarts[i]->errormsg);
+            free(ctx->uarts[i]);
+        }
+    }
+
     ret = _uart_get_device_list(ctx);
 
     if (ret != UART_ESUCCESS) {
         return ret;
+    }
+
+    if (tmp_uarts_count) {
+        for (i = 0; i < ctx->uarts_count; i++) {
+            for (j = 0; j < tmp_uarts_count; j++) {
+                if (strcmp(tmp_uarts[j]->dev, ctx->uarts[i]->dev) == 0) {
+                    ctx->uarts[i]->flags |= UART_FOPENED;
+                }
+            }
+        }
     }
 
     *(ret_uarts) = (uart_t *) ctx->uarts;
@@ -222,6 +249,8 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
 {
     uart_t *uart;
     int ret;
+    int i;
+    int found = 0;
 
     if (!ctx) {
         return NULL;
@@ -233,31 +262,124 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
         return NULL;
     }
 
-    uart = (uart_t *) malloc(sizeof(uart_t));
+    if (ctx->uarts_count) {
+        for (i = 0; i < ctx->uarts_count; i++) {
+            if (strcmp(devname, ctx->uarts[i]->dev) == 0) {
+                if (ctx->uarts[i]->flags & UART_FOPENED) {
+                    return ctx->uarts[i];
+                } else {
+                    ret = parse_option(ctx, ctx->uarts[i], opt);
 
-    if (!uart) {
-        _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+                    if (ret != UART_ESUCCESS) {
+                        return NULL;
+                    }
 
-        return NULL;
+                    ctx->uarts[i]->baud = baud;
+                    ret = _uart_open(ctx, ctx->uarts[i]);
+
+                    if (ret != UART_ESUCCESS) {
+                        return NULL;
+                    }
+
+                    uart = ctx->uarts[i];
+                    found = 1;
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            uart = (uart_t *) malloc(sizeof(uart_t));
+
+            if (!uart) {
+                _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+
+                return NULL;
+            }
+
+            memset(uart, 0, sizeof(uart_t));
+            uart->errormsg = (char *) malloc(UART_ERRORMAX);
+            ctx->uarts[ctx->uarts_count] = uart;
+            ctx->uarts_count++;
+
+            if (!uart->errormsg) {
+                _uart_error(ctx, uart, UART_ENOMEM, NULL, NULL);
+
+                return NULL;
+            }
+
+            strcpy(uart->dev, devname);
+            ret = parse_option(ctx, uart, opt);
+
+            if (ret != UART_ESUCCESS) {
+                free(uart);
+
+                return NULL;
+            }
+
+            uart->baud = baud;
+            ret = _uart_open(ctx, uart);
+
+            if (ret != UART_ESUCCESS) {
+                free(uart);
+
+                return NULL;
+            }
+        }
+    } else {
+        uart = (uart_t *) malloc(sizeof(uart_t));
+
+        if (!uart) {
+            _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+
+            return NULL;
+        }
+
+        memset(uart, 0, sizeof(uart_t));
+        uart->errormsg = (char *) malloc(UART_ERRORMAX);
+        ctx->uarts[ctx->uarts_count] = uart;
+        ctx->uarts_count++;
+
+        if (!uart->errormsg) {
+            _uart_error(ctx, uart, UART_ENOMEM, NULL, NULL);
+
+            return NULL;
+        }
+
+        strcpy(uart->dev, devname);
+        ret = parse_option(ctx, uart, opt);
+
+        if (ret != UART_ESUCCESS) {
+            free(uart);
+
+            return NULL;
+        }
+
+        uart->baud = baud;
+        ret = _uart_open(ctx, uart);
+
+        if (ret != UART_ESUCCESS) {
+            free(uart);
+
+            return NULL;
+        }
     }
 
-    memset(uart, 0, sizeof(uart_t));
-    ret = parse_option(ctx, uart, opt);
+#ifdef LIBUART_THREADS
+    if (!(uart->flags & UART_FOPENED)) {
+        ret = _uart_thread_init(ctx, uart);
 
-    if (ret != UART_ESUCCESS) {
-        free(uart);
+        if (ret != UART_ESUCCESS) {
+            return NULL;
+        }
 
-        return NULL;
+        ret = _uart_thread_start(ctx, uart);
+
+        if (ret != UART_ESUCCESS) {
+            return NULL;
+        }
     }
-
-    uart->baud = baud;
-    ret = _uart_open(ctx, uart);
-
-    if (ret != UART_ESUCCESS) {
-        free(uart);
-
-        return NULL;
-    }
+#endif
 
     uart->flags |= UART_FOPENED;
 
@@ -267,6 +389,8 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
 int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *opt)
 {
     int ret;
+    int i;
+    int found = 0;
 
     if (!ctx) {
         return UART_ECTX;
@@ -278,21 +402,57 @@ int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *o
         return UART_EHANDLE;
     }
 
-    memset(uart, 0, sizeof(uart_t));
-    ret = parse_option(ctx, uart, opt);
+    if (ctx->uarts_count) {
+        for (i = 0; i < ctx->uarts_count; i++) {
+            if (ctx->uarts[i] == uart) {
+                found = 1;
+                break;
+            }
+        }
 
-    if (ret != UART_ESUCCESS) {
-        free(uart);
+        if (!found) {
+            _uart_error(ctx, NULL, UART_EDEV, NULL, NULL);
 
-        return ret;
+            return UART_EDEV;
+        }
+    } else {
+        _uart_error(ctx, NULL, UART_EDEV, NULL, NULL);
+
+        return UART_EDEV;
     }
 
-    uart->baud = baud;
-    ret = _uart_open(ctx, uart);
+    if (!(uart->flags & UART_FOPENED)) {
+        ret = parse_option(ctx, uart, opt);
 
-    if (ret != UART_ESUCCESS) {
-        return ret;
+        if (ret != UART_ESUCCESS) {
+            free(uart);
+
+            return ret;
+        }
+
+        uart->baud = baud;
+        ret = _uart_open(ctx, uart);
+
+        if (ret != UART_ESUCCESS) {
+            return ret;
+        }
     }
+
+#ifdef LIBUART_THREADS
+    if (!(uart->flags & UART_FOPENED)) {
+        ret = _uart_thread_init(ctx, uart);
+
+        if (ret != UART_ESUCCESS) {
+            return ret;
+        }
+
+        ret = _uart_thread_start(ctx, uart);
+
+        if (ret != UART_ESUCCESS) {
+            return ret;
+        }
+    }
+#endif
 
     uart->flags |= UART_FOPENED;
 
@@ -314,6 +474,14 @@ int UART_dev_close(uart_ctx_t *ctx, uart_t *uart)
     }
 
     if (uart->flags & UART_FOPENED) {
+#ifdef LIBUART_THREADS
+        ret = _uart_thread_stop(ctx, uart);
+
+        if (ret != UART_ESUCCESS) {
+            return ret;
+        }
+#endif
+
         ret = _uart_flush(ctx, uart);
 
         if (ret != UART_ESUCCESS) {
@@ -352,6 +520,7 @@ int UART_dev_free(uart_ctx_t *ctx, uart_t *uart)
         return ret;
     }
 
+    free(uart->errormsg);
     free(uart);
 
     return UART_ESUCCESS;
@@ -376,8 +545,8 @@ ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, void *send_buf, size_t len)
 #else
     _uart_thread_lock_tx(ctx, uart);
 
-    if (buffer_get_free(tx_buffer) >= (ssize_t) len) {
-        ret = buffer_wr(tx_buffer, send_buf, (ssize_t) len);
+    if (buffer_get_free(uart->tx_buffer) >= (ssize_t) len) {
+        ret = buffer_wr(uart->tx_buffer, send_buf, (ssize_t) len);
     } else {
         _uart_error(ctx, uart, UART_EBUF, NULL, "full");
 
@@ -409,13 +578,13 @@ ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len)
 #else
     _uart_thread_lock_rx(ctx, uart);
 
-    if (buffer_get_num(rx_buffer) == 0) {
+    if (buffer_get_num(uart->rx_buffer) == 0) {
         return 0;
     } else {
-        if (buffer_get_num(rx_buffer) < (ssize_t) len) {
-            ret = buffer_rd(rx_buffer, recv_buf, buffer_get_num(rx_buffer));
+        if (buffer_get_num(uart->rx_buffer) < (ssize_t) len) {
+            ret = buffer_rd(uart->rx_buffer, recv_buf, buffer_get_num(uart->rx_buffer));
         } else {
-            ret = buffer_rd(rx_buffer, recv_buf, (ssize_t) len);
+            ret = buffer_rd(uart->rx_buffer, recv_buf, (ssize_t) len);
         }
     }
 
@@ -882,6 +1051,8 @@ int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_dev)
 
 int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num)
 {
+    int ret;
+
     if (!ctx) {
         return UART_ECTX;
     }
@@ -897,6 +1068,20 @@ int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num)
 
         return UART_EINVAL;
     }
+
+#ifndef LIBUART_THREADS
+    ret = _uart_get_bytes(ctx, uart, ret_num);
+
+    if (ret != UART_ESUCCESS) {
+        return ret;
+    }
+#else
+    _uart_thread_lock_rx(ctx, uart);
+    ret = (int) buffer_get_num(uart->rx_buffer);
+    _uart_thread_unlock_rx(ctx, uart);
+
+    *(ret_num) = ret;
+#endif
 
     return UART_ESUCCESS;
 }
