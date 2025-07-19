@@ -158,14 +158,21 @@ int UART_init(uart_ctx_t **ret_ctx)
         return UART_ENOMEM;
     }
 
+    memset(ctx->errormsg, 0, UART_ERRORMAX);
     ret = _uart_init(ctx);
 
     if (ret != UART_ESUCCESS) {
         return ret;
     }
 
+    ctx->init_done = 1;
     ctx->flags |= UART_CTXFOKAY;
     *(ret_ctx) = ctx;
+    ret = _uart_get_device_list(ctx);
+
+    if (ret != UART_ESUCCESS) {
+        return ret;
+    }
 
     return UART_ESUCCESS;
 }
@@ -299,8 +306,6 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
 
             memset(uart, 0, sizeof(uart_t));
             uart->errormsg = (char *) malloc(UART_ERRORMAX);
-            ctx->uarts[ctx->uarts_count] = uart;
-            ctx->uarts_count++;
 
             if (!uart->errormsg) {
                 _uart_error(ctx, uart, UART_ENOMEM, NULL, NULL);
@@ -308,6 +313,9 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
                 return NULL;
             }
 
+            ctx->uarts[ctx->uarts_count] = uart;
+            ctx->uarts_count++;
+            memset(uart->errormsg, 0, UART_ERRORMAX);
             strcpy(uart->dev, devname);
             ret = parse_option(ctx, uart, opt);
 
@@ -337,8 +345,6 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
 
         memset(uart, 0, sizeof(uart_t));
         uart->errormsg = (char *) malloc(UART_ERRORMAX);
-        ctx->uarts[ctx->uarts_count] = uart;
-        ctx->uarts_count++;
 
         if (!uart->errormsg) {
             _uart_error(ctx, uart, UART_ENOMEM, NULL, NULL);
@@ -346,6 +352,9 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
             return NULL;
         }
 
+        ctx->uarts[ctx->uarts_count] = uart;
+        ctx->uarts_count++;
+        memset(uart->errormsg, 0, UART_ERRORMAX);
         strcpy(uart->dev, devname);
         ret = parse_option(ctx, uart, opt);
 
