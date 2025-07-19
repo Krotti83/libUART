@@ -60,6 +60,7 @@ _BUILD_COMPILER=gcc
 _BUILD_OS=linux
 _BUILD_THREADS=0
 _BUILD_DEBUG=0
+_BUILD_HOSTOS=Linux
 
 _INSTALL_PREFIX=/usr/local
 _INSTALL_INCDIR="$_INSTALL_PREFIX/include"
@@ -110,6 +111,7 @@ cleanup()
     unset _BUILD_OS
     unset _BUILD_THREADS
     unset _BUILD_DEBUG
+    unset _BUILD_HOSTOS
     
     unset _INSTALL_PREFIX
     unset _INSTALL_INCDIR
@@ -4033,9 +4035,18 @@ touch $_BUILD_DIR/$_BUILD_LOG
 
 echo -n "build OS... " | tee -a $_BUILD_DIR/$_BUILD_LOG
 uname -o | tee -a $_BUILD_DIR/$_BUILD_LOG
+_BUILD_HOSTOS=$(uname -o)
 echo -n "build machine... " | tee -a $_BUILD_DIR/$_BUILD_LOG
 uname -m | tee -a $_BUILD_DIR/$_BUILD_LOG
 
+if [ "$_BUILD_HOSTOS" = "FreeBSD" ]
+then
+    _BUILD_COMPILER=clang
+    check_make
+    check_binutils_llvm
+    check_compiler_llvm
+    check_libc
+else
 if [ "$_BUILD_OS" = "windows" ]
 then
     if [ "$_BUILD_COMPILER" = "clang" ]
@@ -4074,6 +4085,7 @@ then
 else
     echo "Unsupported target operating system ($_BUILD_OS)!!!" | tee -a $_BUILD_DIR/$_BUILD_LOG
     exit 1
+fi
 fi
 
 check_pdflatex
