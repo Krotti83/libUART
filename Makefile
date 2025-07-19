@@ -81,7 +81,10 @@ CCFLAGS_WINDLL		+= -DLIBUART_EXPORTS
 LDFLAGS			+= -Wl,-n
 LDFLAGS			+= -Wl,--build-id=none
 LDFLAGS			+= -Wl,--gc-sections
+
+ifeq ($(CONFIG_BUILD_COMPILER),gcc)
 LDFLAGS			+= -Wl,--no-warn-rwx-segments
+endif
 
 # Dynamic GNU ld flags
 LDFLAGS_DYN		+= -Wl,-soname,$(TARGET_DYNAMIC).0.2
