@@ -23,11 +23,14 @@
 #ifndef _LIBUART_INTERNAL_UTIL_H
 #define _LIBUART_INTERNAL_UTIL_H
 
+#include <stddef.h>
+
 #define STRINGIFY(x)    #x
 #define TOSTRING(x)     STRINGIFY(x)
 #define DO_EXPAND(x)    x ## 1
 #define EXPAND(x)       DO_EXPAND(x)
 
 extern int enum_contains(int enum_values[], int len, int value);
+extern int strnrcmp(const char *str1, const char *str2, size_t num);
 
 #endif
