@@ -861,7 +861,6 @@ int _uart_get_bytes(struct _uart_ctx *ctx, struct _uart *uart, int *bytes)
     
     ret = (int) comst.cbInQue;
     (*bytes) = ret;
-    uart->error = UART_ESUCCESS;
 
     return UART_ESUCCESS;
 }
