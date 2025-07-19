@@ -59,10 +59,14 @@ int _uart_baud_valid(int value)
         UART_BAUD_230400,
         UART_BAUD_460800,
         UART_BAUD_500000,
+#ifdef __linux__
         UART_BAUD_576000,
+#endif
         UART_BAUD_921600,
         UART_BAUD_1000000,
+#ifdef __linux__
         UART_BAUD_1152000,
+#endif
         UART_BAUD_1500000,
         UART_BAUD_2000000,
         UART_BAUD_2500000,
@@ -479,6 +483,7 @@ int _uart_init_baud(struct _uart_ctx *ctx, struct _uart *uart)
         }
 
         break;
+#ifdef __linux__
     case UART_BAUD_576000:
         ret = cfsetispeed(&options, B576000);
         
@@ -497,6 +502,7 @@ int _uart_init_baud(struct _uart_ctx *ctx, struct _uart *uart)
         }
 
         break;
+#endif
     case UART_BAUD_921600:
         ret = cfsetispeed(&options, B921600);
         
@@ -533,6 +539,7 @@ int _uart_init_baud(struct _uart_ctx *ctx, struct _uart *uart)
         }
 
         break;
+#ifdef __linux__
     case UART_BAUD_1152000:
         ret = cfsetispeed(&options, B1152000);
         
@@ -551,6 +558,7 @@ int _uart_init_baud(struct _uart_ctx *ctx, struct _uart *uart)
         }
 
         break;
+#endif
     case UART_BAUD_1500000:
         ret = cfsetispeed(&options, B1500000);
         
@@ -1121,9 +1129,9 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
     entry = readdir(dir);
 
     while (entry) {
-        if (strncmp(entry->d_name, "cuau", strlen("cuau") == 0) {
+        if (strncmp(entry->d_name, "cuau", strlen("cuau")) == 0) {
             if ((strnrcmp(entry->d_name, ".init", strlen(".init")) != 0) &&
-                (strnrcmp(entry->d_name, ".lock", strlen(".lock")) != 0) {
+                (strnrcmp(entry->d_name, ".lock", strlen(".lock")) != 0)) {
                     ctx->uarts[ctx->uarts_count] = (struct _uart *) malloc(sizeof(struct _uart));
 
                     if (!ctx->uarts[ctx->uarts_count]) {
