@@ -901,12 +901,19 @@ int _uart_init(struct _uart_ctx *ctx)
         return UART_ESYSAPI;
     }
 
+#ifdef __linux__
     /**
-     * User must be in group 'dialout' for using the UART
-     *
-     * NOTE: On FreeBSD too?
+     * User must be in group 'dialout' for using the UART on Linux
      */
     g = getgrnam("dialout");
+#elif __FreeBSD__
+    /**
+     * User must be in group 'dialer' for using the UART on FreeBSD
+     */
+    g = getgrnam("dialer");
+#else
+#error "Unsupported POSIX compatible operating system."
+#endif
 
     if (!g) {
         _uart_error(ctx, NULL, UART_ESYSAPI, "getgrnam", NULL);
@@ -921,12 +928,12 @@ int _uart_init(struct _uart_ctx *ctx)
         }
     }
 
-    ctx->init_done = 1;
     return UART_EPERM;
 }
 
 int _uart_get_device_list(struct _uart_ctx *ctx)
 {
+#ifdef __linux__
     FILE *f;
     char line[512];
     char devname[128];
@@ -940,11 +947,18 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
     char *dev[512];
     int dev_index = 0;
     int i;
+#elif __FreeBSD__
+    DIR *dir;
+    struct dirent *entry;
+#else
+#error "Unsupported POSIX compatible operating system."
+#endif
 
     if (!ctx) {
         return UART_ECTX;
     }
 
+#ifdef __linux__
     line_ptr = (char *) line;
 
     f = fopen("/proc/tty/drivers", "rb");
@@ -957,8 +971,6 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
 
     /**
      * Parse file '/proc/tty/drivers' for available UART's
-     *
-     * NOTE: Exist this file on FreeBSD too?
      */
     while (!feof(f)) {
         fread(line_ptr, 1, 1, f);
@@ -1019,7 +1031,7 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
             strncpy(devtype, cell_ptr, count);
 
             /**
-             * Test if device is an UART
+             * Test if device is an UART (serial)
              */
             if (strcmp(devtype, "serial") == 0) {
                 dev[dev_index] = malloc(strlen(strrchr(devname, '/') + 1) + 1);
@@ -1045,12 +1057,14 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
 
     /**
      * Parse directory '/sys/class/tty' for available UART's
-     *
-     * NOTE: Exist this file on FreeBSD too?
      */
     dir = opendir("/sys/class/tty");
 
     if (!dir) {
+        for (i = 0; i < dev_index; i++) {
+            free(dev[i]);
+        }
+
         _uart_error(ctx, NULL, UART_ESYSAPI, "opendir", NULL);
 
         return UART_ESYSAPI;
@@ -1064,6 +1078,14 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
                 ctx->uarts[ctx->uarts_count] = (struct _uart *) malloc(sizeof(struct _uart));
 
                 if (!ctx->uarts[ctx->uarts_count]) {
+                    _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+
+                    return UART_ENOMEM;
+                }
+
+                ctx->uarts[ctx->uarts_count]->errormsg = (char *) malloc(UART_ERRORMAX);
+
+                if (!ctx->uarts[ctx->uarts_count]->errormsg) {
                     _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
 
                     return UART_ENOMEM;
@@ -1083,6 +1105,54 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
     for (i = 0; i < dev_index; i++) {
         free(dev[i]);
     }
+
+#elif __FreeBSD__
+    /**
+     * Parse directory '/dev' for available UART's
+     */
+    dir = opendir("/dev");
+
+    if (!dir) {
+        _uart_error(ctx, NULL, UART_ESYSAPI, "opendir", NULL);
+
+        return UART_ESYSAPI;
+    }
+
+    entry = readdir(dir);
+
+    while (entry) {
+        if (strncmp(entry->d_name, "cuau", strlen("cuau") == 0) {
+            if ((strnrcmp(entry->d_name, ".init", strlen(".init")) != 0) &&
+                (strnrcmp(entry->d_name, ".lock", strlen(".lock")) != 0) {
+                    ctx->uarts[ctx->uarts_count] = (struct _uart *) malloc(sizeof(struct _uart));
+
+                    if (!ctx->uarts[ctx->uarts_count]) {
+                        _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+
+                        return UART_ENOMEM;
+                    }
+
+                    ctx->uarts[ctx->uarts_count]->errormsg = (char *) malloc(UART_ERRORMAX);
+
+                    if (!ctx->uarts[ctx->uarts_count]->errormsg) {
+                        _uart_error(ctx, NULL, UART_ENOMEM, NULL, NULL);
+
+                        return UART_ENOMEM;
+                    }
+
+                    memset(ctx->uarts[ctx->uarts_count], 0, sizeof(struct _uart));
+                    snprintf(ctx->uarts[ctx->uarts_count]->dev, UART_NAMEMAX, "/dev/%s", entry->d_name);
+                    ctx->uarts_count++;
+                }
+        }
+
+        entry = readdir(dir);
+    }
+
+    closedir(dir);
+#else
+#error "Unsupported POSIX compatible operating system."
+#endif
 
     return UART_ESUCCESS;
 }
