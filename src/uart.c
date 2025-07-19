@@ -367,6 +367,22 @@ uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud bau
 
 #ifdef LIBUART_THREADS
     if (!(uart->flags & UART_FOPENED)) {
+        uart->rx_buffer = buffer_create(UART_BUFFERSIZE);
+
+        if (!uart->rx_buffer) {
+            _uart_error(ctx, uart, UART_EBUF, NULL, NULL);
+
+            return NULL;
+        }
+
+        uart->tx_buffer = buffer_create(UART_BUFFERSIZE);
+
+        if (!uart->tx_buffer) {
+            _uart_error(ctx, uart, UART_EBUF, NULL, NULL);
+
+            return NULL;
+        }
+
         ret = _uart_thread_init(ctx, uart);
 
         if (ret != UART_ESUCCESS) {
@@ -440,6 +456,22 @@ int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *o
 
 #ifdef LIBUART_THREADS
     if (!(uart->flags & UART_FOPENED)) {
+        uart->rx_buffer = buffer_create(UART_BUFFERSIZE);
+
+        if (!uart->rx_buffer) {
+            _uart_error(ctx, uart, UART_EBUF, NULL, NULL);
+
+            return UART_EBUF;
+        }
+
+        uart->tx_buffer = buffer_create(UART_BUFFERSIZE);
+
+        if (!uart->tx_buffer) {
+            _uart_error(ctx, uart, UART_EBUF, NULL, NULL);
+
+            return UART_EBUF;
+        }
+
         ret = _uart_thread_init(ctx, uart);
 
         if (ret != UART_ESUCCESS) {
@@ -480,6 +512,9 @@ int UART_dev_close(uart_ctx_t *ctx, uart_t *uart)
         if (ret != UART_ESUCCESS) {
             return ret;
         }
+
+        buffer_free(uart->rx_buffer);
+        buffer_free(uart->tx_buffer);
 #endif
 
         ret = _uart_flush(ctx, uart);
