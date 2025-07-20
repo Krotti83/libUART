@@ -1,10 +1,15 @@
 # libUART
 
 Easy to use library for accessing the **UART** (serial interface). The library use the **POSIX**
-functions from ``termios`` on **Linux**. So it should also be possible to use the library on ***BSD**
-systems too, but currently not tested. In the ``UART_open()`` function the library setups
-the **UART** in *raw* and *none-blocking* mode currently. On **Windows** the **UART** library
-doesn't use a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``.
+functions from ``termios`` on **Linux** and **FreeBSD**. So it should also be possible to use the 
+library on other ***BSD**. systems too, but currently not tested. In the ``UART_open()`` function 
+the library setups the **UART** interface in *raw* and *none-blocking* mode currently on **POSIX** 
+compatible systems like **Linux** and **FreeBSD**. On **Windows** the **UART** library doesn't use 
+a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``. The 
+library function ``UART_init()`` tests if the user have sufficient permissions to use the **UART** 
+interfaces on **Linux** and **FreeBSD**. For **Linux** systems the user which uses the library 
+should be member from group ``dialout`` and on **FreeBSD** from group ``dialer``, otherwise the
+``UART_init()`` fails with the error ``UART_EPERM``.
 
 ## Build status
 
@@ -18,7 +23,8 @@ doesn't use a *none-blocking* mode, because it's not supported by the used funct
 ## NOTES
 
 The library is still under development and not fully tested. But most of the functions
-which are provided for the library are fully usable.
+which are provided from the library should be working. If you investigate issue with the
+functions from the library please report them to the [GitHub issue tracker](https://github.com/Krotti83/libUART/issues) for this repository.
 
 ## Supported operating systems
 
@@ -34,7 +40,7 @@ which are provided for the library are fully usable.
 ## TODO
 
 * Add **Visual Studio** support (currently only cross building through **MINGW** is supported)
-* Fully complete documentation
+* Fully complete documentation (is for API version ``0.1.x.x``, and therefore not valid)
 
 ## Issues
 
@@ -48,7 +54,7 @@ If you find issues in the library please report them to the [GitHub issue tracke
 * GNU binutils or LLVM binutils
 * GCC or LLVM C compiler (clang)
 * GCC-MINGW for cross building for Windows on Linux (target ``x86_64-w64-mingw32-``)
-* Wine
+* Wine (only required if building for Windows)
 * ``pdflatex`` (only required if the PDF documentation should be build)
 
 ### Ubuntu
@@ -80,8 +86,9 @@ $ pkg install llvm
 
 ### Build without documentation
 
-With the *default* setup, the PDF documentation will not be build. But the API documentation is
-still available under ``doc/libUART.rst``. Only the **LaTeX** document will not be build.
+With the *default* configuration, the PDF documentation will not be build. But the API documentation is
+still available under [doc/libUART.rst](https://github.com/Krotti83/libUART/blob/main/doc/libUART.rst). 
+Only the **LaTeX** PDF document will not be build.
 
 ```
 $ ./configure
@@ -143,8 +150,9 @@ The created files can be found in the ``build`` directory. The following files w
 
 ### Build without documentation
 
-With the *default* setup, the PDF documentation will not be build. But the API documentation is
-still available under ``doc/libUART.rst``. Only the **LaTeX** document will not be build.
+With the *default* configuration, the PDF documentation will not be build. But the API documentation is
+still available under [doc/libUART.rst](https://github.com/Krotti83/libUART/blob/main/doc/libUART.rst). 
+Only the **LaTeX** PDF document will not be build.
 
 ```
 $ ./configure
