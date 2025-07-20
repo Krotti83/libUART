@@ -1,5 +1,3 @@
-[![Build Ubuntu CI](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_default.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_default.yml)[![Build Ubuntu with Threads CI](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_threads.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_threads.yml)[![Build for Windows on Ubuntu CI](https://github.com/Krotti83/libUART/actions/workflows/build_win_default.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_win_default.yml)[![Build for Windows on Ubuntu with Threads CI](https://github.com/Krotti83/libUART/actions/workflows/build_win_threads.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_win_threads.yml)
-
 # libUART
 
 Easy to use library for accessing the **UART** (serial interface). The library use the **POSIX**
@@ -8,6 +6,15 @@ systems too, but currently not tested. In the ``UART_open()`` function the libra
 the **UART** in *raw* and *none-blocking* mode currently. On **Windows** the **UART** library
 doesn't use a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``.
 
+## Build status
+
+| Target/Configuration      | Status |
+|---------------------------|--------|
+| Linux/Default             | [![Build Ubuntu CI](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_default.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_default.yml) |
+| Linux/Threading Support   | [![Build Ubuntu with Threads CI](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_threads.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_threads.yml) |
+| Windows/Default           | [![Build for Windows on Ubuntu CI](https://github.com/Krotti83/libUART/actions/workflows/build_win_default.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_win_default.yml) |
+| Windows/Threading Support | [![Build for Windows on Ubuntu with Threads CI](https://github.com/Krotti83/libUART/actions/workflows/build_win_threads.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_win_threads.yml) |
+
 ## NOTES
 
 The library is still under development and not fully tested. But most of the functions
@@ -15,25 +22,62 @@ which are provided for the library are fully usable.
 
 ## Supported operating systems
 
-* **Linux** (or all **POSIX** compatible systems)
-* **Windows** (cross building through **MINGW**)
+* **Linux**
+* **FreeBSD**
+* **Windows** (cross building through **MINGW** currently)
+
+## Features
+
+* Supports up to *512* UART's
+* Threading support (experimental)
 
 ## TODO
 
-* Add threading support
-* Add **FreeBSD** support
 * Add **Visual Studio** support (currently only cross building through **MINGW** is supported)
 * Fully complete documentation
 
-## Prerequisites for building the library
+## Issues
 
+If you find issues in the library please report them to the [GitHub issue tracker](https://github.com/Krotti83/libUART/issues) for this repository.
+
+
+## Prerequisites for building the library (Linux)
+
+* Git
 * GNU make
 * GNU binutils or LLVM binutils
-* GCC or LLVM clang
-* GCC for Windows if cross building for Windows on Linux (target ``x86_64-w64-mingw32-``)
+* GCC or LLVM C compiler (clang)
+* GCC-MINGW for cross building for Windows on Linux (target ``x86_64-w64-mingw32-``)
+* Wine
 * ``pdflatex`` (only required if the PDF documentation should be build)
 
-## Building the library
+### Ubuntu
+
+```
+$ sudo apt update
+$ sudo apt install git wine binutils-mingw-w64-x86-64 gcc-mingw-w64-x86-64
+```
+
+The packages ``wine``, ``binutils-mingw-w64-x86-64`` and ``gcc-mingw-w64-x86-64`` are required
+if building for **Windows** on Linux.
+
+## Prerequisites for building the library (FreeBSD)
+
+* Git
+* GNU make (FreeBSD's make is currently not supported)
+* LLVM binutils
+* LLVM C compiler (clang)
+* ``pdflatex`` (only required if the PDF documentation should be build)
+
+```
+$ pkg update
+$ pkg install git
+$ pkg install gmake
+$ pkg install llvm
+```
+
+## Building the library (Linux)
+
 ### Build without documentation
 
 With the *default* setup, the PDF documentation will not be build. But the API documentation is
@@ -49,8 +93,8 @@ The created files can be found in the ``build`` directory. The following files w
 
 * ``UART.h``
 * ``libUART.so`` (Symbolic link to ``libUART.so.0``)
-* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.1``)
-* ``libUART.so.0.1``
+* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.2``)
+* ``libUART.so.0.2``
 * ``libUART.a``
 
 ### Build with documentation
@@ -71,8 +115,8 @@ The created files can be found in the ``build`` directory. The following files w
 
 * ``UART.h``
 * ``libUART.so`` (Symbolic link to ``libUART.so.0``)
-* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.1``)
-* ``libUART.so.0.1``
+* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.2``)
+* ``libUART.so.0.2``
 * ``libUART.a``
 * ``libUART.pdf``
 
@@ -94,6 +138,50 @@ The created files can be found in the ``build`` directory. The following files w
 * ``libUART.dll``
 * ``libUART.lib``
 * ``libUART.pdf`` if building with option ``--enable-doc``
+
+## Building the library (FreeBSD)
+
+### Build without documentation
+
+With the *default* setup, the PDF documentation will not be build. But the API documentation is
+still available under ``doc/libUART.rst``. Only the **LaTeX** document will not be build.
+
+```
+$ ./configure
+$ gmake
+```
+#### Output Files
+
+The created files can be found in the ``build`` directory. The following files will be created:
+
+* ``UART.h``
+* ``libUART.so`` (Symbolic link to ``libUART.so.0``)
+* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.2``)
+* ``libUART.so.0.2``
+* ``libUART.a``
+
+### Build with documentation
+
+To build the library with PDF documentation generation, pass the option ``--enable-doc`` to the
+``configure`` script. The ``configure`` also checks if the required application ``pdflatex`` is
+installed for building the PDF documentation.
+
+
+```
+$ ./configure --enable-doc
+$ gmake
+```
+
+#### Output Files
+
+The created files can be found in the ``build`` directory. The following files will be created:
+
+* ``UART.h``
+* ``libUART.so`` (Symbolic link to ``libUART.so.0``)
+* ``libUART.so.0`` (Symbolic link to ``libUART.so.0.2``)
+* ``libUART.so.0.2``
+* ``libUART.a``
+* ``libUART.pdf``
 
 ## Install the library on your system
 
@@ -167,4 +255,4 @@ $ gcc -I build -o test test.c build/libUART.so
 ## Documentation
 
 The documentation is currently not completed, but will finalize this later too. The current
-API (Application Programming Interface) can be found [![here](https://github.com/Krotti83/libUART/blob/main/doc/libUART.rst)].
+API (Application Programming Interface) can be found [here (doc/libUART.rst)](https://github.com/Krotti83/libUART/blob/main/doc/libUART.rst).
