@@ -14,8 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: prerequisites
-      run: sudo apt update
-           sudo apt install git
+      run: |
+      sudo apt update
+      sudo apt install git
     - name: configure
       run: ./configure
     - name: make
