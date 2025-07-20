@@ -1,4 +1,4 @@
-[![Build CI](https://github.com/Krotti83/libUART/actions/workflows/build.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build.yml)
+[![Build Ubuntu CI](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_default.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_default.yml)[![Build Ubuntu with Threads CI](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_threads.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_lnx_threads.yml)[![Build for Windows on Ubuntu CI](https://github.com/Krotti83/libUART/actions/workflows/build_win_default.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_win_default.yml)[![Build for Windows on Ubuntu with Threads CI](https://github.com/Krotti83/libUART/actions/workflows/build_win_threads.yml/badge.svg)](https://github.com/Krotti83/libUART/actions/workflows/build_win_threads.yml)
 
 # libUART
 
