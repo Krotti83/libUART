@@ -35,7 +35,7 @@ TARGET_WINDLL		= $(TARGET).dll
 
 # Generic shell commands
 RM			= rm -rf
-CP			= cp -Rf
+CP			= cp -afR
 MKDIR			= mkdir -p
 MV			= mv -f
 LN			= ln -sf
