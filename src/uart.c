@@ -1130,7 +1130,7 @@ int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num)
     return UART_ESUCCESS;
 }
 
-int UART_get_deverrro(uart_ctx_t *ctx, uart_t *uart)
+int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart)
 {
     if (!ctx) {
         return UART_ECTX;
@@ -1160,7 +1160,7 @@ char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart)
     return uart->errormsg;
 }
 
-int UART_get_ctxerrro(uart_ctx_t *ctx)
+int UART_get_ctxerror(uart_ctx_t *ctx)
 {
     if (!ctx) {
         return UART_ECTX;

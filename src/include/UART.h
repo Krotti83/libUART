@@ -277,13 +277,13 @@ extern int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_dev);
 extern int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num);
 
 /* Get last context error number */
-extern int UART_get_ctxerrro(uart_ctx_t *ctx);
+extern int UART_get_ctxerror(uart_ctx_t *ctx);
 
 /* Get last context error message */
 extern char *UART_get_ctxerrormsg(uart_ctx_t *ctx);
 
 /* Get last UART device error number */
-extern int UART_get_deverrro(uart_ctx_t *ctx, uart_t *uart);
+extern int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart);
 
 /* Get last UART device error message */
 extern char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart);
@@ -400,13 +400,13 @@ extern LIBUART_API int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_de
 extern LIBUART_API int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num);
 
 /* Get last context error number */
-extern LIBUART_API int UART_get_ctxerrro(uart_ctx_t *ctx);
+extern LIBUART_API int UART_get_ctxerror(uart_ctx_t *ctx);
 
 /* Get last context error message */
 extern LIBUART_API char *UART_get_ctxerrormsg(uart_ctx_t *ctx);
 
 /* Get last UART device error number */
-extern LIBUART_API int UART_get_deverrro(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart);
 
 /* Get last UART device error message */
 extern LIBUART_API char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart);
