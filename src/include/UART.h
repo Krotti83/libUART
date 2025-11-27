@@ -125,7 +125,9 @@ enum e_data {
     UART_DATA_6 = 6,
     UART_DATA_7 = 7,
     UART_DATA_8 = 8,
-    UART_DATA_16 = 16       /* Currently not supported */
+#ifdef _WIN32
+    UART_DATA_16 = 16       /* Windows only (experimental) */
+#endif
 };
 
 /**
@@ -142,7 +144,9 @@ enum e_parity {
  */
 enum e_stop {
     UART_STOP_1_0,
-    UART_STOP_1_5,          /* Currently not supported */
+#ifdef _WIN32
+    UART_STOP_1_5,          /* Windows only (experimental) */
+#endif
     UART_STOP_2_0
 };
 
