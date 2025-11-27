@@ -285,6 +285,15 @@ int _uart_init_databits(struct _uart_ctx *ctx, struct _uart *uart)
         
         dcb.ByteSize = 8;
         break;
+    case UART_DATA_16:
+        if (!(uart->prop.wSettableData & WIN_DATABITS_16)) {
+            _uart_error(ctx, uart, UART_EDATA, NULL, "unsupported");
+
+            return UART_EDATA;
+        }
+
+        dcb.ByteSize = 16;
+        break;
     default:
         _uart_error(ctx, uart, UART_EDATA, NULL, "unsupported");
 
@@ -416,6 +425,15 @@ int _uart_init_stopbits(struct _uart_ctx *ctx, struct _uart *uart)
         }
         
         dcb.StopBits = ONESTOPBIT;
+        break;
+    case UART_STOP_1_5:
+        if (!(uart->prop.wSettableStopParity & WIN_STOPBITS_15)) {
+            _uart_error(ctx, uart, UART_ESTOP, NULL, "unsupported");
+
+            return UART_ESTOP;
+        }
+
+        dcb.StopBits = ONE5STOPBITS;
         break;
     case UART_STOP_2_0:
         if (!(uart->prop.wSettableStopParity & WIN_STOPBITS_20)) {
