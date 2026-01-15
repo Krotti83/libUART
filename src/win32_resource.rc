@@ -22,7 +22,7 @@ BEGIN
             VALUE "FileDescription", "Easy to use UART library"
             VALUE "FileVersion", "0.2.0.0"
             VALUE "InternalName", "libUART"
-            VALUE "LegalCopyright", "Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>"
+            VALUE "LegalCopyright", "Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>"
             VALUE "OriginalFilename", "libUART.dll"
             VALUE "ProductName", "UART Library"
             VALUE "ProductVersion", "0.2.0.0"

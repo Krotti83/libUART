@@ -4,7 +4,7 @@
  *
  * Easy to use library for accessing the UART
  *
- * Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>
+ * Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
