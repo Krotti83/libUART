@@ -4,7 +4,7 @@
  *
  * Easy to use library for accessing the UART
  *
- * Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>
+ * Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -24,6 +24,9 @@
 #define _LIBUART_INTERNAL_UART_H
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #else
 #ifdef LIBUART_THREADS
@@ -42,7 +45,8 @@
 #define UART_NAMEMAX            512
 #define UART_ERRORMAX           512
 
-#define UART_FOPENED            0x00000001
+#define UART_FVALID             0x00000001
+#define UART_FOPENED            0x00000010
 #define UART_FERROR             0x80000000
 
 struct _uart {
@@ -88,11 +92,11 @@ struct _uart {
 
 #define UART_DEVMAX             512
 
-#define UART_CTXFOKAY           0x00000001
+#define UART_CTXFVALID          0x00000001
+#define UART_CTXFOKAY           0x00000010
 #define UART_CTXFERROR          0x80000000
 
 struct _uart_ctx {
-    int init_done;
     int error;
     char *errormsg;
     int uarts_count;
