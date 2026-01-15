@@ -19,7 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
- 
+
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1171,7 +1173,6 @@ int _uart_get_device_list(struct _uart_ctx *ctx)
 int _uart_open(struct _uart_ctx *ctx, struct _uart *uart)
 {
     int ret;
-    int fd;
     struct termios options;
     
     if (!ctx) {
