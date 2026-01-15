@@ -28,6 +28,7 @@ extern "C"
 #endif
 
 #include <stddef.h>
+#include <stdarg.h>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -213,7 +214,7 @@ extern int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
  */
 
 /* Send data over the UART interface */
-extern ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, void *send_buf, size_t len);
+extern ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
 
 /* Receive data from the UART interface */
 extern ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
@@ -223,10 +224,13 @@ extern ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t l
  */
 
 /* Send a string over the UART interface */
-extern ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, char *msg);
+extern ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
+
+/* Send a formatted string over the UART interface */
+extern ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
 
 /* Send a character over the UART interface */
-extern int UART_putc(uart_ctx_t *ctx, uart_t *uart, char c);
+extern int UART_putc(uart_ctx_t *ctx, uart_t *uart, const char c);
 
 /* Receive a character from the UART interface */
 extern int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
@@ -235,7 +239,7 @@ extern int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
 extern int UART_flush(uart_ctx_t *ctx, uart_t *uart);
 
 /* Set pin state from the UART interface */
-extern int UART_set_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, int state);
+extern int UART_set_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, const int state);
 
 /* Get pin state from the UART interface */
 extern int UART_get_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, int *ret_state);
@@ -342,7 +346,7 @@ extern LIBUART_API int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
  */
 
 /* Send data over the UART interface */
-extern LIBUART_API ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, void *send_buf, size_t len);
+extern LIBUART_API ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
 
 /* Receive data from the UART interface */
 extern LIBUART_API ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
@@ -352,7 +356,10 @@ extern LIBUART_API ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_b
  */
 
 /* Send a string over the UART interface */
-extern LIBUART_API ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, char *msg);
+extern LIBUART_API ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
+
+/* Send a formatted string over the UART interface */
+extern LIBUART_API ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
 
 /* Send a character over the UART interface */
 extern LIBUART_API int UART_putc(uart_ctx_t *ctx, uart_t *uart, char c);
