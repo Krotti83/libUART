@@ -4,7 +4,7 @@
  *
  * Easy to use library for accessing the UART
  *
- * Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>
+ * Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -23,6 +23,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
 #include <windows.h>
 
@@ -486,7 +490,7 @@ int _uart_init_flow(struct _uart_ctx *ctx, struct _uart *uart)
     }
     
     switch (uart->flow_ctrl) {
-    case UART_FLOW_NO:
+    case UART_FLOW_NONE:
         dcb.fOutxCtsFlow = FALSE,
         dcb.fOutxDsrFlow = FALSE,
         dcb.fDtrControl = DTR_CONTROL_DISABLE;
@@ -494,7 +498,7 @@ int _uart_init_flow(struct _uart_ctx *ctx, struct _uart *uart)
         dcb.fOutX = FALSE;
         dcb.fInX = FALSE;
         break;
-    case UART_FLOW_SW:
+    case UART_FLOW_SOFTWARE:
         dcb.fOutxCtsFlow = FALSE,
         dcb.fOutxDsrFlow = FALSE,
         dcb.fDtrControl = DTR_CONTROL_DISABLE;
@@ -502,7 +506,7 @@ int _uart_init_flow(struct _uart_ctx *ctx, struct _uart *uart)
         dcb.fOutX = TRUE;
         dcb.fInX = TRUE;
         break;
-    case UART_FLOW_HW:
+    case UART_FLOW_HARDWARE:
         dcb.fOutxCtsFlow = TRUE,
         dcb.fOutxDsrFlow = TRUE,
         dcb.fDtrControl = DTR_CONTROL_ENABLE;
