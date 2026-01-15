@@ -4,7 +4,7 @@
  *
  * Easy to use library for accessing the UART
  *
- * Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>
+ * Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,10 +22,17 @@
 
 #ifndef _LIBUART_UART_H
 #define _LIBUART_UART_H
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #include <stddef.h>
 
 #ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #ifdef LIBUART_EXPORTS
 #define LIBUART_API __declspec(dllexport)
@@ -143,20 +150,20 @@ enum e_parity {
  * UART stop bits length
  */
 enum e_stop {
-    UART_STOP_1_0,
+    UART_STOP_1_0,          /* 1 stop bit */
 #ifdef _WIN32
-    UART_STOP_1_5,          /* Windows only (experimental) */
+    UART_STOP_1_5,          /* 1.5 stop bits - Windows only (experimental) */
 #endif
-    UART_STOP_2_0
+    UART_STOP_2_0           /* 2 stop bits */
 };
 
 /**
  * UART flow control
  */
 enum e_flow {
-    UART_FLOW_NO,           /* None */
-    UART_FLOW_SW,           /* Software */
-    UART_FLOW_HW            /* Hardware */
+    UART_FLOW_NONE,         /* No flow control */
+    UART_FLOW_SOFTWARE,     /* Software flow control */
+    UART_FLOW_HARDWARE      /* Hardware flow control */
 };
 
 /**
@@ -286,8 +293,14 @@ extern int UART_get_ctxerror(uart_ctx_t *ctx);
 /* Get last context error message */
 extern char *UART_get_ctxerrormsg(uart_ctx_t *ctx);
 
+/* Clear context error */
+extern int UART_clear_ctxerror(uart_ctx_t *ctx);
+
 /* Get last UART device error number */
 extern int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart);
+
+/* Clear UART device error */
+extern int UART_clear_deverror(uart_ctx_t *ctx, uart_t *uart);
 
 /* Get last UART device error message */
 extern char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart);
@@ -409,11 +422,17 @@ extern LIBUART_API int UART_get_ctxerror(uart_ctx_t *ctx);
 /* Get last context error message */
 extern LIBUART_API char *UART_get_ctxerrormsg(uart_ctx_t *ctx);
 
+/* Clear context error */
+extern LIBUART_API int UART_clear_ctxerror(uart_ctx_t *ctx);
+
 /* Get last UART device error number */
 extern LIBUART_API int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart);
 
 /* Get last UART device error message */
 extern LIBUART_API char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart);
+
+/* Clear UART device error */
+extern LIBUART_API int UART_clear_deverror(uart_ctx_t *ctx, uart_t *uart);
 
 /* Get the library name string */
 extern LIBUART_API char *UART_get_libname(void);
@@ -423,4 +442,7 @@ extern LIBUART_API char *UART_get_libversion(void);
 
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 #endif
