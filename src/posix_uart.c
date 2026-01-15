@@ -4,7 +4,7 @@
  *
  * Easy to use library for accessing the UART
  *
- * Copyright (c) 2025 Johannes Krottmayer <krotti83@proton.me>
+ * Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -864,14 +864,17 @@ int _uart_init_flow(struct _uart_ctx *ctx, struct _uart *uart)
     }
     
     switch (uart->flow_ctrl) {
-    case UART_FLOW_NO:
+    case UART_FLOW_NONE:
         options.c_iflag &= ~(IXON | IXOFF | IXANY);
+        options.c_cflag &= ~CRTSCTS;
         break;
-    case UART_FLOW_SW:
+    case UART_FLOW_SOFTWARE:
         options.c_iflag |= (IXON | IXOFF | IXANY);
+        options.c_cflag &= ~CRTSCTS;
         break;
-    case UART_FLOW_HW:
+    case UART_FLOW_HARDWARE:
         options.c_iflag &= ~(IXON | IXOFF | IXANY);
+        options.c_cflag |= CRTSCTS;
         break;
     default:
         _uart_error(ctx, uart, UART_EFLOW, NULL, "unsupported");
@@ -1181,16 +1184,14 @@ int _uart_open(struct _uart_ctx *ctx, struct _uart *uart)
         return UART_EHANDLE;
     }
 
-    fd = open(uart->dev, O_RDWR | O_NOCTTY | O_NDELAY);
+    uart->fd = open(uart->dev, O_RDWR | O_NOCTTY);
     
-    if (fd == -1) {
+    if (uart->fd == -1) {
         _uart_error(ctx, uart, UART_ESYSAPI, "open", NULL);
 
         return UART_ESYSAPI;
     }
     
-    uart->fd = fd;
-
     /* set non-blocking mode */
     ret = fcntl(uart->fd, F_SETFL, O_NDELAY);
 
@@ -1246,7 +1247,7 @@ int _uart_open(struct _uart_ctx *ctx, struct _uart *uart)
     /* set raw mode (see man cfmakeraw) */
     options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
     options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP |
-    INLCR | IGNCR | ICRNL | IXON);
+                         INLCR | IGNCR | ICRNL | IXON);
     options.c_oflag &= ~OPOST;
     options.c_cflag &= ~(CSIZE | PARENB);
     options.c_cflag |= CS8;
