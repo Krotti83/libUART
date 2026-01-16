@@ -1,45 +1,85 @@
-===============================================
-libUART API (Application Programming Interface)
-===============================================
+===========================================
+libUART v0.2.0.0 - Easy to use UART Library
+===========================================
 
-These document describes the application programming interface (API) for the ``libUART`` library
-version ``0.2.0.0``.
+1 - Preamble
+------------
 
-Header ``UART.h``
-=================
+Easy to use library for accessing the **UART** (serial interface). The library use the **POSIX**
+functions from ``termios`` on **Linux** and **FreeBSD**. So it should also be possible to use the
+library on other ***BSD**. systems too, but currently not tested. In the ``UART_open()`` function
+the library setups the **UART** interface in *raw* and *none-blocking* mode currently on **POSIX**
+compatible systems like **Linux** and **FreeBSD**. On **Windows** the **UART** library doesn't use
+a *none-blocking* mode, because it's not supported by the used function ``CreateFile()``. The
+library function ``UART_init()`` tests if the user have sufficient permissions to use the **UART**
+interfaces on **Linux** and **FreeBSD**. For **Linux** systems the user which uses the library
+should be member from group ``dialout`` and on **FreeBSD** from group ``dialer``, otherwise the
+``UART_init()`` fails with the error ``UART_EPERM``.
+
+2 - License
+-----------
+
+    Copyright (c) 2025, 2026 Johannes Krottmayer <krotti83@proton.me>
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+3 - Application Programming Interface - Header ``UART.h``
+---------------------------------------------------------
 
 To use the library include the following header in your source code.
 
 Usage
-~~~~~
+"""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     #include <UART.h>
 
-Basic Functions
-===============
+.. rstcheck: ignore-languages=c
 
-Function ``UART_init()``
-------------------------
+4 - Application Programming Interface - Basic Functions
+-------------------------------------------------------
 
-Description
-~~~~~~~~~~~
+
+asdasdjfaksdfs
+
+4.1 - Function ``UART_init()``
+------------------------------
+
+4.1.1 - Description
+"""""""""""""""""""
+
 Initializes the ``UART`` library and creates an context.
 
-Prototype
-~~~~~~~~~
+4.1.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_init(uart_ctx_t **ret_ctx);
 
-Arguments
-~~~~~~~~~
+.. rstcheck: ignore-languages=c
+
+4.1.3 - Arguments
+"""""""""""""""""
+
     - ``ret_ctx`` Pointer to Pointer to valid new context
 
-Returns
-~~~~~~~
+4.1.4 - Returns
+"""""""""""""""
+
 Returns ``UART_ESUCCESS`` on success, or an error code on failure. Possible error codes
 are:
 
@@ -55,9 +95,10 @@ Error in operating system specific API.
 ``UART_EPERM``:
 Insufficient permissions (currently only on ``Linux``/``FreeBSD``)
 
-Usage
-~~~~~
+4.1.5 - Usage
+"""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     #include <stdio.h>
@@ -72,26 +113,34 @@ Usage
         printf("UART_init() failed\n");
     }
 
-Function ``UART_free()``
-------------------------
+.. rstcheck: ignore-languages=c
 
-Description
-~~~~~~~~~~~
+4.2 - Function ``UART_free()``
+------------------------------
+
+4.2.1 - Description
+"""""""""""""""""""
+
 Closes and frees all ``UART`` connections and destroys the context.
 
-Prototype
-~~~~~~~~~
+4.2.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_free(uart_ctx_t *ctx);
 
-Arguments
-~~~~~~~~~
+.. rstcheck: ignore-languages=c
+
+4.2.3 - Arguments
+"""""""""""""""""
+
     - ``ctx`` Pointer to valid context
 
-Returns
-~~~~~~~
+4.2.4 - Returns
+"""""""""""""""
+
 Returns ``UART_ESUCCESS`` on success, or an error code on failure. Possible error codes
 are:
 
@@ -101,9 +150,10 @@ are:
 ``UART_ESYSAPI``:
 Error in operating system specific API.
 
-Usage
-~~~~~
+4.2.5 - Usage
+"""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     #include <stdio.h>
@@ -118,20 +168,35 @@ Usage
         printf("UART_free() failed\n");
     }
 
-Function ``UART_get_device_list()``
------------------------------------
+.. rstcheck: ignore-languages=c
 
-Description
-~~~~~~~~~~~
+4.3 - Function ``UART_get_device_list()``
+-----------------------------------------
+
+4.3.1 - Description
+"""""""""""""""""""
+
 Return a list from all current available ``UART`` interfaces from the operating system.
 
-Arguments
-~~~~~~~~~
+4.3.2 - Prototype
+"""""""""""""""""
+
+.. rstcheck: ignore-next-code-block
+.. code-block:: c
+
+    ssize_t UART_get_device_list(uart_ctx_t *ctx, uart_t **ret_uarts, size_t num);
+
+.. rstcheck: ignore-languages=c
+
+4.3.3 - Arguments
+"""""""""""""""""
+
     - ``ctx`` Pointer to valid context
     - ``ret_uarts`` Pointer to buffer of ``UART`` interfaces, can be ``NULL``
 
-Returns
-~~~~~~~
+4.3.4 - Returns
+"""""""""""""""
+
 Returns the number of available ``UART`` interfaces (the ``UART`` interfaces will be returned
 in ``ret_uarts``). On failure an error code is returned. Possible error codes are:
 
@@ -142,20 +207,24 @@ in ``ret_uarts``). On failure an error code is returned. Possible error codes ar
 Error in operating system specific API.
 
 
-Function ``UART_dev_open_name()``
----------------------------------
+4.4 - Function ``UART_dev_open_name()``
+---------------------------------------
 
-Description
-~~~~~~~~~~~
+4.4.1 - Description
+"""""""""""""""""""
+
 Opens an ``UART`` interface by device name.
 
-Prototype
-~~~~~~~~~
+4.4.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud baud, const char *opt);
 
+.. rstcheck: ignore-languages=c
+
 +-------------------+-----------+------------------+
 | Enum              | Baud Rate | Operating System |
 +===================+===========+==================+
@@ -228,20 +297,24 @@ Prototype
 | UART_BAUD_4000000 | 4000000   | Linux/FreeBSD    |
 +-------------------+-----------+------------------+
 
-Function ``UART_dev_open()``
-----------------------------
+4.5 - Function ``UART_dev_open()``
+----------------------------------
 
-Description
-~~~~~~~~~~~
+4.5.1 - Description
+"""""""""""""""""""
+
 Opens an ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+4.5.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *opt);
 
+.. rstcheck: ignore-languages=c
+
 +-------------------+-----------+------------------+
 | Enum              | Baud Rate | Operating System |
 +===================+===========+==================+
@@ -314,161 +387,193 @@ Prototype
 | UART_BAUD_4000000 | 4000000   | Linux/FreeBSD    |
 +-------------------+-----------+------------------+
 
-Function ``UART_dev_close()``
------------------------------
+4.6 - Function ``UART_dev_close()``
+-----------------------------------
 
-Description
-~~~~~~~~~~~
+4.6.1 - Description
+"""""""""""""""""""
+
 Closes the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+4.6.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_dev_close(uart_ctx_t *ctx, uart_t *uart);
 
+.. rstcheck: ignore-languages=c
 
-Function ``UART_dev_free()``
-----------------------------
 
-Description
-~~~~~~~~~~~
+4.7 - Function ``UART_dev_free()``
+----------------------------------
+
+4.7.1 - Description
+"""""""""""""""""""
+
 Frees the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+4.7.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
 
+.. rstcheck: ignore-languages=c
 
-Basic Input/Output Functions
-============================
+5 - Application Programming Interface - Basic Input/Output Functions
+--------------------------------------------------------------------
 
 This section contains low level function for sending and receiving from the ``UART`` interface.
 
-Function ``UART_send()``
-------------------------
+5.1 - Function ``UART_send()``
+------------------------------
 
-Description
-~~~~~~~~~~~
+5.1.1 - Description
+"""""""""""""""""""
+
 Sends data over the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+5.1.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
 
+.. rstcheck: ignore-languages=c
 
-Function ``UART_recv()``
-------------------------
 
-Description
-~~~~~~~~~~~
+5.2 - Function ``UART_recv()``
+------------------------------
+
+5.2.1 - Description
+"""""""""""""""""""
+
 Receives data from the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+5.2.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
 
-Input/Output Functions
-======================
+.. rstcheck: ignore-languages=c
+
+
+6 - Application Programming Interface - Input/Output Functions
+--------------------------------------------------------------
 
 This section contains higher level input and output functions like sending a string over
 the ``UART`` interface, sending a formatted string, sending a single char or getting a char
 from the ``UART`` interface. It also contains the setting and querying from the pin states.
 
-Function ``UART_puts()``
-------------------------
+6.1 - Function ``UART_puts()``
+------------------------------
 
-Description
-~~~~~~~~~~~
+6.1.1 - Description
+"""""""""""""""""""
+
 Send a string over the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+6.1.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
 
-Function ``UART_printf()``
---------------------------
+.. rstcheck: ignore-languages=c
 
-Description
-~~~~~~~~~~~
+6.2 - Function ``UART_printf()``
+--------------------------------
+
+6.2.1 - Description
+"""""""""""""""""""
+
 Send a formatted string over the ``UART`` interface. This function uses ``vsnprintf()`` internally
 so all default formatting options should be supported. Currently the maximum string size is limited
 to ``1024`` bytes.
 
-Prototype
-~~~~~~~~~
+6.2.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
 
+.. rstcheck: ignore-languages=c
 
-Function ``UART_putc()``
-------------------------
 
-Description
-~~~~~~~~~~~
+6.3 - Function ``UART_putc()``
+------------------------------
+
+6.3.1 - Description
+"""""""""""""""""""
+
 Send a character over the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+6.3.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_putc(uart_ctx_t *ctx, uart_t *uart, const char c);
 
-Function ``UART_getc()``
-------------------------
+.. rstcheck: ignore-languages=c
 
-Description
-~~~~~~~~~~~
+6.4 - Function ``UART_getc()``
+------------------------------
+
+6.4.1 - Description
+"""""""""""""""""""
+
 Receive a character from the ``UART`` interface.
 
-Prototype
-~~~~~~~~~
+6.4.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
 
-
-Function ``UART_flush()``
--------------------------
-
-Function ``UART_set_pin()``
----------------------------
+.. rstcheck: ignore-languages=c
 
 
+6.5 - Function ``UART_flush()``
+-------------------------------
+
+6.6 - Function ``UART_set_pin()``
+---------------------------------
 
 
 
-Function ``UART_get_pin()``
----------------------------
 
 
-Configuration Functions
-=======================
+6.7 - Function ``UART_get_pin()``
+---------------------------------
+
+
+7 - Application Programming Interface - Configuration Functions
+---------------------------------------------------------------
 
 This section contains the configurations functions from the ``UART`` interface like the baud rate,
 the amount fo data bits, the amount of stop bits, the selected flow control and the parity.
 It also contains useful functions like getting the device name and the underlying file descriptor
 on ``Linux``/``FreeBSD`` or the file handle under Windows.
 
-Function ``UART_set_baud()``
-----------------------------
+7.1 - Function ``UART_set_baud()``
+----------------------------------
 
 
 +-------------------+-----------+------------------+
@@ -544,8 +649,8 @@ Function ``UART_set_baud()``
 +-------------------+-----------+------------------+
 
 
-Function ``UART_get_baud()``
-----------------------------
+7.2 - Function ``UART_get_baud()``
+----------------------------------
 
 +-------------------+-----------+------------------+
 | Enum              | Baud Rate | Operating System |
@@ -620,8 +725,8 @@ Function ``UART_get_baud()``
 +-------------------+-----------+------------------+
 
 
-Function ``UART_set_databits()``
---------------------------------
+7.3 - Function ``UART_set_databits()``
+--------------------------------------
 
 +--------------+-------+------------------+
 | Enum         | Value | Operating System |
@@ -637,8 +742,8 @@ Function ``UART_set_databits()``
 | UART_DATA_16 | 16    | Windows          |
 +--------------+-------+------------------+
 
-Function ``UART_get_databits()``
---------------------------------
+7.4 - Function ``UART_get_databits()``
+--------------------------------------
 
 +--------------+-------+------------------+
 | Enum         | Value | Operating System |
@@ -654,8 +759,8 @@ Function ``UART_get_databits()``
 | UART_DATA_16 | 16    | Windows          |
 +--------------+-------+------------------+
 
-Function ``UART_set_parity()``
-------------------------------
+7.5 - Function ``UART_set_parity()``
+------------------------------------
 
 +------------------+--------+
 | Enum             | Parity |
@@ -667,8 +772,8 @@ Function ``UART_set_parity()``
 | UART_PARITY_EVEN | Even   |
 +------------------+--------+
 
-Function ``UART_get_parity()``
-------------------------------
+7.6 - Function ``UART_get_parity()``
+------------------------------------
 
 +------------------+--------+
 | Enum             | Parity |
@@ -680,8 +785,8 @@ Function ``UART_get_parity()``
 | UART_PARITY_EVEN | Even   |
 +------------------+--------+
 
-Function ``UART_set_stopbits()``
---------------------------------
+7.7 - Function ``UART_set_stopbits()``
+--------------------------------------
 
 +---------------+-------+------------------+
 | Enum          | Value | Operating System |
@@ -693,8 +798,8 @@ Function ``UART_set_stopbits()``
 | UART_STOP_2_0 | 2     |                  |
 +---------------+-------+------------------+
 
-Function ``UART_get_stopbits()``
---------------------------------
+7.8 - Function ``UART_get_stopbits()``
+--------------------------------------
 
 +---------------+-------+------------------+
 | Enum          | Value | Operating System |
@@ -706,8 +811,8 @@ Function ``UART_get_stopbits()``
 | UART_STOP_2_0 | 2     |                  |
 +---------------+-------+------------------+
 
-Function ``UART_set_flowctrl()``
---------------------------------
+7.9 - Function ``UART_set_flowctrl()``
+--------------------------------------
 
 +--------------------+----------+
 | Enum               | Flow     |
@@ -720,8 +825,8 @@ Function ``UART_set_flowctrl()``
 +--------------------+----------+
 
 
-Function ``UART_get_flowctrl()``
---------------------------------
+7.10 - Function ``UART_get_flowctrl()``
+---------------------------------------
 
 +--------------------+----------+
 | Enum               | Flow     |
@@ -733,46 +838,53 @@ Function ``UART_get_flowctrl()``
 | UART_FLOW_HARDWARE | Hardware |
 +--------------------+----------+
 
-Function ``UART_get_fd()`` (Linux/FreeBSD only)
------------------------------------------------
+7.11 - Function ``UART_get_fd()`` (Linux/FreeBSD only)
+------------------------------------------------------
 
-Function ``UART_get_handle()`` (Windows only)
----------------------------------------------
+7.12 - Function ``UART_get_handle()`` (Windows only)
+----------------------------------------------------
 
-Function ``UART_get_dev()``
----------------------------
+7.13 - Function ``UART_get_dev()``
+----------------------------------
 
-Miscellaneous Functions
-=======================
+8 - Application Programming Interface - Miscellaneous Functions
+---------------------------------------------------------------
 
 This section contains various miscellaneous functions for error handling and other
 useful functions. It also contain the version information functions from the library.
 
-Function ``UART_get_libname()``
--------------------------------
+8.8 - Function ``UART_get_libname()``
+-------------------------------------
 
-Description
-~~~~~~~~~~~
+8.8.1 - Description
+"""""""""""""""""""
+
 Returns the library name.
 
-Prototype
-~~~~~~~~~
+8.8.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     char *UART_get_libname(void);
 
-Arguments
-~~~~~~~~~
+.. rstcheck: ignore-languages=c
+
+8.8.3 - Arguments
+"""""""""""""""""
+
 None
 
-Returns
-~~~~~~~
+8.8.4 - Returns
+"""""""""""""""
+
 Returns the library name string.
 
-Usage
-~~~~~
+8.8.5 - Usage
+"""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     #include <stdio.h>
@@ -780,34 +892,45 @@ Usage
 
     printf("%s\n", UART_get_libname());
 
-Function ``UART_get_libversion()``
-----------------------------------
+.. rstcheck: ignore-languages=c
 
-Description
-~~~~~~~~~~~
+8.9 - Function ``UART_get_libversion()``
+----------------------------------------
+
+8.9.1 - Description
+"""""""""""""""""""
+
 Returns the library version string.
 
-Prototype
-~~~~~~~~~
+8.9.2 - Prototype
+"""""""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     char *UART_get_libversion(void);
 
-Arguments
-~~~~~~~~~
+.. rstcheck: ignore-languages=c
+
+8.9.3 - Arguments
+"""""""""""""""""
+
 None
 
-Returns
-~~~~~~~
+8.9.4 - Returns
+""""""""""""""""
+
 Returns the library version string.
 
-Usage
-~~~~~
+8.9.5 - Usage
+"""""""""""""
 
+.. rstcheck: ignore-next-code-block
 .. code-block:: c
 
     #include <stdio.h>
     #include <UART.h>
 
     printf("%s\n", UART_get_libversion());
+
+.. rstcheck: ignore-languages=c
