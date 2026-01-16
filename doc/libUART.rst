@@ -12,6 +12,7 @@ To use the library include the following header in your source code.
 
 Usage
 ~~~~~
+
 .. code-block:: c
 
     #include <UART.h>
@@ -28,6 +29,7 @@ Initializes the ``UART`` library and creates an context.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_init(uart_ctx_t **ret_ctx);
@@ -79,6 +81,7 @@ Closes and frees all ``UART`` connections and destroys the context.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_free(uart_ctx_t *ctx);
@@ -148,6 +151,7 @@ Opens an ``UART`` interface by device name.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud baud, const char *opt);
@@ -233,6 +237,7 @@ Opens an ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *opt);
@@ -318,6 +323,7 @@ Closes the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_dev_close(uart_ctx_t *ctx, uart_t *uart);
@@ -332,6 +338,7 @@ Frees the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
@@ -351,6 +358,7 @@ Sends data over the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
@@ -365,6 +373,7 @@ Receives data from the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
@@ -385,6 +394,7 @@ Send a string over the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
@@ -400,6 +410,7 @@ to ``1024`` bytes.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
@@ -414,6 +425,7 @@ Send a character over the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_putc(uart_ctx_t *ctx, uart_t *uart, const char c);
@@ -427,6 +439,7 @@ Receive a character from the ``UART`` interface.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
@@ -744,6 +757,7 @@ Returns the library name.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     char *UART_get_libname(void);
@@ -758,6 +772,7 @@ Returns the library name string.
 
 Usage
 ~~~~~
+
 .. code-block:: c
 
     #include <stdio.h>
@@ -774,6 +789,7 @@ Returns the library version string.
 
 Prototype
 ~~~~~~~~~
+
 .. code-block:: c
 
     char *UART_get_libversion(void);
@@ -788,6 +804,7 @@ Returns the library version string.
 
 Usage
 ~~~~~
+
 .. code-block:: c
 
     #include <stdio.h>
