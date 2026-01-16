@@ -2,686 +2,755 @@
 libUART API (Application Programming Interface)
 ===============================================
 
-These document describes the application programming interface (API) for the ``libUART`` library.
+These document describes the application programming interface (API) for the ``libUART`` library
+version ``0.2.0.0``.
 
-Header ``libUART``
-------------------
+Header ``UART.h``
+=================
 
 To use the library include the following header in your source code.
 
 Usage
 ~~~~~
-
 .. code-block:: c
 
     #include <UART.h>
 
-Function ``int UART_init(void)``
+Basic Functions
+===============
+
+Function ``UART_init()``
+------------------------
+
+Description
+~~~~~~~~~~~
+Initializes the ``UART`` library and creates an context.
+
+Prototype
+~~~~~~~~~
+.. code-block:: c
+
+    int UART_init(uart_ctx_t **ret_ctx);
+
+Arguments
+~~~~~~~~~
+    - ``ret_ctx`` Pointer to Pointer to valid new context
+
+Returns
+~~~~~~~
+Returns ``UART_ESUCCESS`` on success, or an error code on failure. Possible error codes
+are:
+
+``UART_EINVAL``:
+``ret_ctx`` is a ``NULL`` pointer.
+
+``UART_ENOMEM``:
+No free memory available.
+
+``UART_ESYSAPI``:
+Error in operating system specific API.
+
+``UART_EPERM``:
+Insufficient permissions (currently only on ``Linux``/``FreeBSD``)
+
+Usage
+~~~~~
+
+.. code-block:: c
+
+    #include <stdio.h>
+    #include <UART.h>
+
+    int ret;
+    uart_ctx_t *ctx;
+
+    ret = UART_init(&ctx);
+
+    if (ret != UART_ESUCCESS) {
+        printf("UART_init() failed\n");
+    }
+
+Function ``UART_free()``
+------------------------
+
+Description
+~~~~~~~~~~~
+Closes and frees all ``UART`` connections and destroys the context.
+
+Prototype
+~~~~~~~~~
+.. code-block:: c
+
+    int UART_free(uart_ctx_t *ctx);
+
+Arguments
+~~~~~~~~~
+    - ``ctx`` Pointer to valid context
+
+Returns
+~~~~~~~
+Returns ``UART_ESUCCESS`` on success, or an error code on failure. Possible error codes
+are:
+
+``UART_ECTX``:
+``ctx`` is a ``NULL`` pointer.
+
+``UART_ESYSAPI``:
+Error in operating system specific API.
+
+Usage
+~~~~~
+
+.. code-block:: c
+
+    #include <stdio.h>
+    #include <UART.h>
+
+    int ret;
+    uart_ctx_t *ctx;
+
+    ret = UART_free(ctx);
+
+    if (ret != UART_ESUCCESS) {
+        printf("UART_free() failed\n");
+    }
+
+Function ``UART_get_device_list()``
+-----------------------------------
+
+Description
+~~~~~~~~~~~
+Return a list from all current available ``UART`` interfaces from the operating system.
+
+Arguments
+~~~~~~~~~
+    - ``ctx`` Pointer to valid context
+    - ``ret_uarts`` Pointer to buffer of ``UART`` interfaces, can be ``NULL``
+
+Returns
+~~~~~~~
+Returns the number of available ``UART`` interfaces (the ``UART`` interfaces will be returned
+in ``ret_uarts``). On failure an error code is returned. Possible error codes are:
+
+``UART_ECTX``:
+``ctx`` is a ``NULL`` pointer.
+
+``UART_ESYSAPI``:
+Error in operating system specific API.
+
+
+Function ``UART_dev_open_name()``
 ---------------------------------
 
 Description
 ~~~~~~~~~~~
-Initializes the UART library.
+Opens an ``UART`` interface by device name.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - None
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or an error code on failure.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_init();
+    uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud baud, const char *opt);
 
-Notes
-~~~~~
++-------------------+-----------+------------------+
+| Enum              | Baud Rate | Operating System |
++===================+===========+==================+
+| UART_BAUD_0       | 0         | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_50      | 50        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_75      | 75        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_110     | 110       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_134     | 134       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_150     | 150       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_200     | 200       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_300     | 300       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_600     | 600       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1200    | 1200      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1800    | 1800      | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2400    | 2400      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_4800    | 4800      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_9600    | 9600      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_14400   | 14400     | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_19200   | 19200     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_38400   | 38400     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_57600   | 57600     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_115200  | 115200    |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_128000  | 128000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_256000  | 256000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_230400  | 230400    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_460800  | 460800    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_500000  | 500000    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_576000  | 576000    | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_921600  | 921600    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1000000 | 1000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1152000 | 1152000   | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_1500000 | 1500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2000000 | 2000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2500000 | 2500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3000000 | 3000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3500000 | 3500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_4000000 | 4000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
 
-This function is currently a stub. It isn't really required, but should
-be used for further API changes.
-
-Function ``uart_t *UART_open(const char *dev, enum e_baud baud, const char *opt)``
-----------------------------------------------------------------------------------
+Function ``UART_dev_open()``
+----------------------------
 
 Description
 ~~~~~~~~~~~
-Opens the UART interface for the specific device.
+Opens an ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - Device path (``dev``)
-    - Baud rate (``baud``)
-    - Options string (``opt``)
-
-The first character from the options strings are the number of data bits (current valid
-number of data bits are ``5``, ``6``, ``7`` and ``8``), the second character is the parity
-(valid characters are ``N`` (for none), ``O`` (for odd), ``E`` (for even)), the third
-character is the number of stop bits (current valid number are ``1`` and ``2``) and the
-last character represent the flow control (valid character are ``N`` (for none), ``S``
-(for software), ``H`` (for hardware)).
-
-Returns
-~~~~~~~
-Returns a valid UART object (handle), or ``NULL`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    uart_t *uart_obj;
+    int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *opt);
 
-    uart_obj = UART_open("/dev/ttyS0", UART_BAUD_115200, "8N1N");
++-------------------+-----------+------------------+
+| Enum              | Baud Rate | Operating System |
++===================+===========+==================+
+| UART_BAUD_0       | 0         | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_50      | 50        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_75      | 75        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_110     | 110       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_134     | 134       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_150     | 150       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_200     | 200       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_300     | 300       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_600     | 600       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1200    | 1200      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1800    | 1800      | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2400    | 2400      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_4800    | 4800      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_9600    | 9600      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_14400   | 14400     | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_19200   | 19200     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_38400   | 38400     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_57600   | 57600     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_115200  | 115200    |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_128000  | 128000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_256000  | 256000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_230400  | 230400    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_460800  | 460800    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_500000  | 500000    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_576000  | 576000    | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_921600  | 921600    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1000000 | 1000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1152000 | 1152000   | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_1500000 | 1500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2000000 | 2000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2500000 | 2500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3000000 | 3000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3500000 | 3500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_4000000 | 4000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
 
-Function ``void UART_close(uart_t *uart)``
-------------------------------------------
+Function ``UART_dev_close()``
+-----------------------------
 
 Description
 ~~~~~~~~~~~
-Closes the UART interface and frees the UART object/handle.
+Closes the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-
-Returns
-~~~~~~~
-None
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_close(uart_obj);
+    int UART_dev_close(uart_ctx_t *ctx, uart_t *uart);
 
-Function ``ssize_t UART_send(uart_t *uart, char *send_buf, size_t len)``
-------------------------------------------------------------------------
+
+Function ``UART_dev_free()``
+----------------------------
 
 Description
 ~~~~~~~~~~~
-Send data from ``send_buf`` over UART connection.
+Frees the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Send buffer (``send_buf``)
-    - Length of buffer (``len``)
-
-Returns
-~~~~~~~
-Returns number of sent bytes, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_send(uart_obj, buf, 256);
+    int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
 
-Function ``ssize_t UART_recv(uart_t *uart, char *recv_buf, size_t len)``
-------------------------------------------------------------------------
+
+Basic Input/Output Functions
+============================
+
+This section contains low level function for sending and receiving from the ``UART`` interface.
+
+Function ``UART_send()``
+------------------------
 
 Description
 ~~~~~~~~~~~
-Receive over UART and store the data in ``recv_buf``.
+Sends data over the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Receive buffer (``recv_buf``)
-    - Length of buffer (``len``)
-
-Returns
-~~~~~~~
-Returns number of received bytes, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_recv(uart_obj, buf, 256);
+    ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
 
-Function ``ssize_t UART_puts(uart_t *uart, char *msg)``
--------------------------------------------------------
+
+Function ``UART_recv()``
+------------------------
 
 Description
 ~~~~~~~~~~~
-Send a string over UART.
+Receives data from the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-    - String to send (``msg``)
-
-Returns
-~~~~~~~
-Returns number of sent bytes, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_puts(uart_obj, buf, 256);
+    ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
 
-Function ``int UART_putc(uart_t *uart, char c)``
--------------------------------------------------------
+Input/Output Functions
+======================
+
+This section contains higher level input and output functions like sending a string over
+the ``UART`` interface, sending a formatted string, sending a single char or getting a char
+from the ``UART`` interface. It also contains the setting and querying from the pin states.
+
+Function ``UART_puts()``
+------------------------
 
 Description
 ~~~~~~~~~~~
-Send a single character over UART.
+Send a string over the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Character to send (``c``)
-
-Returns
-~~~~~~~
-Returns number of sent bytes, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_putc(uart_obj, 'A');
+    ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
 
-Function ``int UART_getc(uart_t *uart, char *ret_c)``
------------------------------------------------------
+Function ``UART_printf()``
+--------------------------
 
 Description
 ~~~~~~~~~~~
-Get character from UART.
+Send a formatted string over the ``UART`` interface. This function uses ``vsnprintf()`` internally
+so all default formatting options should be supported. Currently the maximum string size is limited
+to ``1024`` bytes.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to character (``ret_t``)
-
-Returns
-~~~~~~~
-Returns number of received bytes, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    char c;
+    ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
 
-    UART_getc(uart_obj, &c);
 
-Function ``int UART_flush(uart_t *uart)``
------------------------------------------
+Function ``UART_putc()``
+------------------------
 
 Description
 ~~~~~~~~~~~
-Flush not sent data over the UART.
+Send a character over the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_flush(uart_obj);
+    int UART_putc(uart_ctx_t *ctx, uart_t *uart, const char c);
 
-Function ``int UART_set_baud(uart_t *uart, enum e_baud baud)``
---------------------------------------------------------------
+Function ``UART_getc()``
+------------------------
 
 Description
 ~~~~~~~~~~~
-Set the baud rate.
+Receive a character from the ``UART`` interface.
 
-Arguments
+Prototype
 ~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Baud rate (``baud``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
 .. code-block:: c
 
-    UART_set_baud(uart_obj, UART_BAUD_115200);
+    int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
+
+
+Function ``UART_flush()``
+-------------------------
+
+Function ``UART_set_pin()``
+---------------------------
+
+
+
+
+
+Function ``UART_get_pin()``
+---------------------------
+
+
+Configuration Functions
+=======================
+
+This section contains the configurations functions from the ``UART`` interface like the baud rate,
+the amount fo data bits, the amount of stop bits, the selected flow control and the parity.
+It also contains useful functions like getting the device name and the underlying file descriptor
+on ``Linux``/``FreeBSD`` or the file handle under Windows.
+
+Function ``UART_set_baud()``
+----------------------------
+
+
++-------------------+-----------+------------------+
+| Enum              | Baud Rate | Operating System |
++===================+===========+==================+
+| UART_BAUD_0       | 0         | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_50      | 50        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_75      | 75        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_110     | 110       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_134     | 134       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_150     | 150       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_200     | 200       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_300     | 300       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_600     | 600       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1200    | 1200      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1800    | 1800      | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2400    | 2400      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_4800    | 4800      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_9600    | 9600      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_14400   | 14400     | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_19200   | 19200     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_38400   | 38400     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_57600   | 57600     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_115200  | 115200    |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_128000  | 128000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_256000  | 256000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_230400  | 230400    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_460800  | 460800    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_500000  | 500000    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_576000  | 576000    | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_921600  | 921600    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1000000 | 1000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1152000 | 1152000   | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_1500000 | 1500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2000000 | 2000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2500000 | 2500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3000000 | 3000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3500000 | 3500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_4000000 | 4000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+
 
-Function ``int UART_get_baud(uart_t *uart, int *ret_baud)``
------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Returns the baud rate in ``ret_baud``.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to baud rate (``ret_baud``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int baud;
-
-    UART_get_baud(uart_obj, &baud);
-
-Function ``int UART_get_fd(uart_t *uart, int *ret_fd)`` (Linux only)
---------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Get the underlying file descriptor for the UART.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to the file descriptor (``ret_fd``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int fd;
-
-    UART_get_fd(uart_obj, &fd);
-
-Function ``int UART_get_handle(uart_t *uart, HANDLE *ret_h)`` (Windows only)
---------------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Get the underlying file handle for the UART.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to the file handle (``ret_h``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    HANDLE fd;
-
-    UART_get_fd(uart_obj, &ret_h);
-
-Function ``int UART_get_dev(uart_t *uart, char **ret_dev)``
------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Get the UART device name in ``ret_dev``.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to the device name (``ret_dev``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int *dev;
-
-    UART_get_dev(uart_obj, &dev);
-
-Function ``int UART_set_databits(uart_t *uart, enum e_data data_bits)``
------------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Set the UART data bits.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - UART number of data bits (``data_bits``)
-        - ``UART_DATA_5``
-        - ``UART_DATA_6``
-        - ``UART_DATA_7``
-        - ``UART_DATA_8``
-        - ``UART_DATA_16``
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    UART_set_databits(uart_obj, UART_BAUD_115200);
-
-Function ``int UART_get_databits(uart_t *uart, int *ret_data_bits)``
---------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Returns the data bits of the UART in ``ret_data_bits``.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to number of data bits (``ret_data_bits``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int data;
-
-    UART_get_databits(uart_obj, &data);
-
-Function ``int UART_set_parity(uart_t *uart, enum e_parity parity)``
---------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Set the UART parity.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - UART parity (``parity``)
-        - ``UART_PARITY_NONE``
-        - ``UART_PARITY_ODD``
-        - ``UART_PARITY_EVEN``
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    UART_set_parity(uart_obj, UART_PARITY_NONE);
-
-Function ``int UART_get_parity(uart_t *uart, int *ret_parity)``
----------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-
-Returns the UART parity in ``ret_parity``.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to parity (``ret_parity``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int parity;
-
-    UART_get_parity(uart_obj, &parity);
-
-Function ``int UART_set_stopbits(uart_t *uart, enum e_stop stop_bits)``
------------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Set the number of stop bits.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - UART number of stop bits (``stop_bits``)
-        - ``UART_STOP_1_0``
-        - ``UART_STOP_1_5``
-        - ``UART_STOP_2_0``
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    UART_set_stopbits(uart_obj, UART_STOP_1_0);
-
-Function ``int UART_get_stopbits(uart_t *uart, int *ret_stop_bits)``
---------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Get the number of stop bits in ``ret_stop_bits``.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to stop bits (``ret_stop_bits``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int stop;
-
-    UART_get_stopbits(uart_obj, &stop);
-
-Function ``int UART_set_flowctrl(uart_t *uart, enum e_flow flow_ctrl)``
------------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Set the flow control.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - UART flow control (``flow_ctrl``)
-        - ``UART_FLOW_NO`` (none)
-        - ``UART_FLOW_SW`` (software)
-        - ``UART_FLOW_HW`` (hardware)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    UART_set_flowctrl(uart_obj, UART_FLOW_NO);
-
-Function ``int UART_get_flowctrl(uart_t *uart, int *ret_flow_ctrl)``
---------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Returns the flow control in ``ret_flow_ctrl``.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to flow control (``ret_flow_ctrl``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int flow;
-
-    UART_get_flowctrl(uart_obj, &flow);
-
-
-Function ``int UART_set_pin(uart_t *uart, enum e_pins pin, int state)``
------------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Set the UART pin state.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - UART pin (``pin``)
-        - ``UART_PIN_RTS`` (out)
-        - ``UART_PIN_DTR`` (out)
-    - Pin state (``state``)
-        - ``UART_PIN_LOW``
-        - ``UART_PIN_HIGH``
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int state;
-
-    UART_set_pin(uart_obj, UART_PIN_RTS, UART_PIN_HIGH);
-
-
-Function ``int UART_get_pin(uart_t *uart, enum e_pins pin, int *ret_state)``
-----------------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Get the UART pin state.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - UART pin (``pin``)
-        - ``UART_PIN_RTS``
-        - ``UART_PIN_CTS``
-        - ``UART_PIN_DSR``
-        - ``UART_PIN_DCD``
-        - ``UART_PIN_DTR``
-        - ``UART_PIN_RI``
-    - Pointer to pin state (``ret_state``). Possible values are:
-        - ``UART_PIN_LOW``
-        - ``UART_PIN_HIGH``
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int state;
-
-    UART_get_pin(uart_obj, UART_PIN_CTS, &state);
-
-Function ``int UART_get_bytes_available(uart_t *uart, int *ret_num)``
----------------------------------------------------------------------
-
-Description
-~~~~~~~~~~~
-Returns the number in ``ret_num`` of bytes available.
-
-Arguments
-~~~~~~~~~
-    - UART object/handle (``uart``)
-    - Pointer to received bytes (``ret_num``)
-
-Returns
-~~~~~~~
-Returns ``0`` on success, or ``-1`` if an error occurred.
-
-Usage
-~~~~~
-
-.. code-block:: c
-
-    int bytes;
-
-    UART_get_bytes_available(uart_obj, &bytes);
-
-Function ``void UART_set_errmsg(int msg_enable)``
--------------------------------------------------
-
-Description
-~~~~~~~~~~~
-This is a stub, currently not used.
-
-Returns
-~~~~~~~
-None.
-
-Function ``char *UART_get_libname(void)``
------------------------------------------
+Function ``UART_get_baud()``
+----------------------------
+
++-------------------+-----------+------------------+
+| Enum              | Baud Rate | Operating System |
++===================+===========+==================+
+| UART_BAUD_0       | 0         | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_50      | 50        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_75      | 75        | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_110     | 110       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_134     | 134       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_150     | 150       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_200     | 200       | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_300     | 300       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_600     | 600       |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1200    | 1200      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_1800    | 1800      | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2400    | 2400      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_4800    | 4800      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_9600    | 9600      |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_14400   | 14400     | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_19200   | 19200     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_38400   | 38400     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_57600   | 57600     |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_115200  | 115200    |                  |
++-------------------+-----------+------------------+
+| UART_BAUD_128000  | 128000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_256000  | 256000    | Windows          |
++-------------------+-----------+------------------+
+| UART_BAUD_230400  | 230400    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_460800  | 460800    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_500000  | 500000    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_576000  | 576000    | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_921600  | 921600    | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1000000 | 1000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_1152000 | 1152000   | Linux            |
++-------------------+-----------+------------------+
+| UART_BAUD_1500000 | 1500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2000000 | 2000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_2500000 | 2500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3000000 | 3000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_3500000 | 3500000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+| UART_BAUD_4000000 | 4000000   | Linux/FreeBSD    |
++-------------------+-----------+------------------+
+
+
+Function ``UART_set_databits()``
+--------------------------------
+
++--------------+-------+------------------+
+| Enum         | Value | Operating System |
++==============+=======+==================+
+| UART_DATA_5  | 5     |                  |
++--------------+-------+------------------+
+| UART_DATA_6  | 6     |                  |
++--------------+-------+------------------+
+| UART_DATA_7  | 7     |                  |
++--------------+-------+------------------+
+| UART_DATA_8  | 8     |                  |
++--------------+-------+------------------+
+| UART_DATA_16 | 16    | Windows          |
++--------------+-------+------------------+
+
+Function ``UART_get_databits()``
+--------------------------------
+
++--------------+-------+------------------+
+| Enum         | Value | Operating System |
++==============+=======+==================+
+| UART_DATA_5  | 5     |                  |
++--------------+-------+------------------+
+| UART_DATA_6  | 6     |                  |
++--------------+-------+------------------+
+| UART_DATA_7  | 7     |                  |
++--------------+-------+------------------+
+| UART_DATA_8  | 8     |                  |
++--------------+-------+------------------+
+| UART_DATA_16 | 16    | Windows          |
++--------------+-------+------------------+
+
+Function ``UART_set_parity()``
+------------------------------
+
++------------------+--------+
+| Enum             | Parity |
++==================+========+
+| UART_PARITY_NONE | None   |
++------------------+--------+
+| UART_PARITY_ODD  | Odd    |
++------------------+--------+
+| UART_PARITY_EVEN | Even   |
++------------------+--------+
+
+Function ``UART_get_parity()``
+------------------------------
+
++------------------+--------+
+| Enum             | Parity |
++==================+========+
+| UART_PARITY_NONE | None   |
++------------------+--------+
+| UART_PARITY_ODD  | Odd    |
++------------------+--------+
+| UART_PARITY_EVEN | Even   |
++------------------+--------+
+
+Function ``UART_set_stopbits()``
+--------------------------------
+
++---------------+-------+------------------+
+| Enum          | Value | Operating System |
++===============+=======+==================+
+| UART_STOP_1_0 | 1     |                  |
++---------------+-------+------------------+
+| UART_STOP_1_5 | 1.5   | Windows          |
++---------------+-------+------------------+
+| UART_STOP_2_0 | 2     |                  |
++---------------+-------+------------------+
+
+Function ``UART_get_stopbits()``
+--------------------------------
+
++---------------+-------+------------------+
+| Enum          | Value | Operating System |
++===============+=======+==================+
+| UART_STOP_1_0 | 1     |                  |
++---------------+-------+------------------+
+| UART_STOP_1_5 | 1.5   | Windows          |
++---------------+-------+------------------+
+| UART_STOP_2_0 | 2     |                  |
++---------------+-------+------------------+
+
+Function ``UART_set_flowctrl()``
+--------------------------------
+
++--------------------+----------+
+| Enum               | Flow     |
++====================+==========+
+| UART_FLOW_NONE     | None     |
++--------------------+----------+
+| UART_FLOW_SOFTWARE | Software |
++--------------------+----------+
+| UART_FLOW_HARDWARE | Hardware |
++--------------------+----------+
+
+
+Function ``UART_get_flowctrl()``
+--------------------------------
+
++--------------------+----------+
+| Enum               | Flow     |
++====================+==========+
+| UART_FLOW_NONE     | None     |
++--------------------+----------+
+| UART_FLOW_SOFTWARE | Software |
++--------------------+----------+
+| UART_FLOW_HARDWARE | Hardware |
++--------------------+----------+
+
+Function ``UART_get_fd()`` (Linux/FreeBSD only)
+-----------------------------------------------
+
+Function ``UART_get_handle()`` (Windows only)
+---------------------------------------------
+
+Function ``UART_get_dev()``
+---------------------------
+
+Miscellaneous Functions
+=======================
+
+This section contains various miscellaneous functions for error handling and other
+useful functions. It also contain the version information functions from the library.
+
+Function ``UART_get_libname()``
+-------------------------------
 
 Description
 ~~~~~~~~~~~
 Returns the library name.
 
+Prototype
+~~~~~~~~~
+.. code-block:: c
+
+    char *UART_get_libname(void);
+
 Arguments
 ~~~~~~~~~
-    - None
+None
 
 Returns
 ~~~~~~~
@@ -689,21 +758,29 @@ Returns the library name string.
 
 Usage
 ~~~~~
-
 .. code-block:: c
 
-    printf("%s", UART_get_libname());
+    #include <stdio.h>
+    #include <UART.h>
 
-Function ``char *UART_get_libversion(void)``
---------------------------------------------
+    printf("%s\n", UART_get_libname());
+
+Function ``UART_get_libversion()``
+----------------------------------
 
 Description
 ~~~~~~~~~~~
-Returns the library version.
+Returns the library version string.
+
+Prototype
+~~~~~~~~~
+.. code-block:: c
+
+    char *UART_get_libversion(void);
 
 Arguments
 ~~~~~~~~~
-    - None
+None
 
 Returns
 ~~~~~~~
@@ -711,7 +788,9 @@ Returns the library version string.
 
 Usage
 ~~~~~
-
 .. code-block:: c
 
-    printf("%s", UART_get_libversion());
+    #include <stdio.h>
+    #include <UART.h>
+
+    printf("%s\n", UART_get_libversion());
