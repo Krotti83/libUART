@@ -62,7 +62,7 @@ extern "C"
 #define UART_EPERM          (-12)   /* Access permission */
 #define UART_EHANDLE        (-13)   /* Invalid UART object/handle */
 #define UART_ECTX           (-14)   /* Invalid context */
-#define UART_EBUF           (-15)   /* Buffer full or empty (only with threading support) */
+#define UART_EBUF           (-15)   /* Buffer full or empty, or too small */
 
 struct _uart_ctx;
 typedef struct _uart_ctx uart_ctx_t;
@@ -179,9 +179,13 @@ enum e_pins {
     UART_PIN_RI             /* Ring Indicator (in) */
 };
 
-/* UART pin states */
-#define UART_PIN_LOW        0
-#define UART_PIN_HIGH       1
+/**
+ * UART pin states
+ */
+enum e_pin_state {
+    UART_PIN_LOW,
+    UART_PIN_HIGH
+};
 
 #ifdef __unix__
 /**
@@ -195,101 +199,158 @@ extern int UART_init(uart_ctx_t **ret_ctx);
 extern int UART_free(uart_ctx_t *ctx);
 
 /* Return a list from all current available UART devices on system */
-extern ssize_t UART_get_device_list(uart_ctx_t *ctx, uart_t **ret_uarts);
+extern ssize_t UART_get_device_list(uart_ctx_t *ctx,
+                                    uart_t **ret_uarts,
+                                    size_t num);
 
 /* Opens an UART interface by device name */
-extern uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud baud, const char *opt);
+extern uart_t *UART_dev_open_name(uart_ctx_t *ctx,
+                                  const char *devname,
+                                  enum e_baud baud,
+                                  const char *opt);
 
 /* Opens an UART interface */
-extern int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *opt);
+extern int UART_dev_open(uart_ctx_t *ctx,
+                         uart_t *uart,
+                         enum e_baud baud,
+                         const char *opt);
 
 /* Closes the UART interface */
-extern int UART_dev_close(uart_ctx_t *ctx, uart_t *uart);
+extern int UART_dev_close(uart_ctx_t *ctx,
+                          uart_t *uart);
 
-/* Free UART device */
-extern int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
+/* Frees the UART device */
+extern int UART_dev_free(uart_ctx_t *ctx,
+                         uart_t *uart);
 
 /**
  * libUART Basic Input/Output Functions
  */
 
 /* Send data over the UART interface */
-extern ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
+extern ssize_t UART_send(uart_ctx_t *ctx,
+                         uart_t *uart,
+                         const void *send_buf,
+                         size_t len);
 
 /* Receive data from the UART interface */
-extern ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
+extern ssize_t UART_recv(uart_ctx_t *ctx,
+                         uart_t *uart,
+                         void *recv_buf,
+                         size_t len);
 
 /**
  * libUART Input/Output Functions
  */
 
 /* Send a string over the UART interface */
-extern ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
+extern ssize_t UART_puts(uart_ctx_t *ctx,
+                         uart_t *uart,
+                         const char *msg);
 
 /* Send a formatted string over the UART interface */
-extern ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
+extern ssize_t UART_printf(uart_ctx_t *ctx,
+                           uart_t *uart,
+                           const char *fmt, ...);
 
 /* Send a character over the UART interface */
-extern int UART_putc(uart_ctx_t *ctx, uart_t *uart, const char c);
+extern int UART_putc(uart_ctx_t *ctx,
+                     uart_t *uart,
+                     const char c);
 
 /* Receive a character from the UART interface */
-extern int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
+extern int UART_getc(uart_ctx_t *ctx,
+                     uart_t *uart,
+                     char *ret_c);
 
 /* Flush not sent data from the UART interface */
-extern int UART_flush(uart_ctx_t *ctx, uart_t *uart);
+extern int UART_flush(uart_ctx_t *ctx,
+                      uart_t *uart);
 
 /* Set pin state from the UART interface */
-extern int UART_set_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, const int state);
+extern int UART_set_pin(uart_ctx_t *ctx,
+                        uart_t *uart,
+                        enum e_pins pin,
+                        enum e_pin_state state);
 
 /* Get pin state from the UART interface */
-extern int UART_get_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, int *ret_state);
+extern int UART_get_pin(uart_ctx_t *ctx,
+                        uart_t *uart,
+                        enum e_pins pin,
+                        int *ret_state);
 
 /**
  * libUART Configuration Functions
  */
 
 /* Set baud rate from the UART interface */
-extern int UART_set_baud(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud);
+extern int UART_set_baud(uart_ctx_t *ctx,
+                         uart_t *uart,
+                         enum e_baud baud);
 
 /* Get baud rate from the UART interface */
-extern int UART_get_baud(uart_ctx_t *ctx, uart_t *uart, int *ret_baud);
+extern int UART_get_baud(uart_ctx_t *ctx,
+                         uart_t *uart,
+                         int *ret_baud);
 
 /* Set number of data bits from the UART interface */
-extern int UART_set_databits(uart_ctx_t *ctx, uart_t *uart, enum e_data data_bits);
+extern int UART_set_databits(uart_ctx_t *ctx,
+                             uart_t *uart,
+                             enum e_data data_bits);
 
 /* Get number of data bits from the UART interface */
-extern int UART_get_databits(uart_ctx_t *ctx, uart_t *uart, int *ret_data_bits);
+extern int UART_get_databits(uart_ctx_t *ctx,
+                             uart_t *uart,
+                             int *ret_data_bits);
 
 /* Set parity from the UART interface */
-extern int UART_set_parity(uart_ctx_t *ctx, uart_t *uart, enum e_parity parity);
+extern int UART_set_parity(uart_ctx_t *ctx,
+                           uart_t *uart,
+                           enum e_parity parity);
 
 /* Get parity from the UART interface */
-extern int UART_get_parity(uart_ctx_t *ctx, uart_t *uart, int *ret_parity);
+extern int UART_get_parity(uart_ctx_t *ctx,
+                           uart_t *uart,
+                           int *ret_parity);
 
 /* Set number of stop bits from the UART interface */
-extern int UART_set_stopbits(uart_ctx_t *ctx, uart_t *uart, enum e_stop stop_bits);
+extern int UART_set_stopbits(uart_ctx_t *ctx,
+                             uart_t *uart,
+                             enum e_stop stop_bits);
 
 /* Get number of stop bits from the UART interface */
-extern int UART_get_stopbits(uart_ctx_t *ctx, uart_t *uart, int *ret_stop_bits);
+extern int UART_get_stopbits(uart_ctx_t *ctx,
+                             uart_t *uart,
+                             int *ret_stop_bits);
 
 /* Set flow control from the UART interface */
-extern int UART_set_flowctrl(uart_ctx_t *ctx, uart_t *uart, enum e_flow flow_ctrl);
+extern int UART_set_flowctrl(uart_ctx_t *ctx,
+                             uart_t *uart,
+                             enum e_flow flow_ctrl);
 
 /* Get flow control from the UART interface */
-extern int UART_get_flowctrl(uart_ctx_t *ctx, uart_t *uart, int *ret_flow_ctrl);
+extern int UART_get_flowctrl(uart_ctx_t *ctx,
+                             uart_t *uart,
+                             int *ret_flow_ctrl);
 
 /* Get the underlying file descriptor from the UART interface */
-extern int UART_get_fd(uart_ctx_t *ctx, uart_t *uart, int *ret_fd);
+extern int UART_get_fd(uart_ctx_t *ctx,
+                       uart_t *uart,
+                       int *ret_fd);
 
 /* Get the device name from the UART interface */
-extern int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_dev);
+extern int UART_get_dev(uart_ctx_t *ctx,
+                        uart_t *uart,
+                        char **ret_dev);
 
 /**
  * libUART Miscellaneous Functions
  */
 
 /* Get the available bytes in the receive channel from the UART interface */
-extern int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num);
+extern int UART_get_bytes_available(uart_ctx_t *ctx,
+                                    uart_t *uart,
+                                    int *ret_num);
 
 /* Get last context error number */
 extern int UART_get_ctxerror(uart_ctx_t *ctx);
@@ -301,13 +362,16 @@ extern char *UART_get_ctxerrormsg(uart_ctx_t *ctx);
 extern int UART_clear_ctxerror(uart_ctx_t *ctx);
 
 /* Get last UART device error number */
-extern int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart);
+extern int UART_get_deverror(uart_ctx_t *ctx,
+                             uart_t *uart);
 
 /* Clear UART device error */
-extern int UART_clear_deverror(uart_ctx_t *ctx, uart_t *uart);
+extern int UART_clear_deverror(uart_ctx_t *ctx,
+                               uart_t *uart);
 
 /* Get last UART device error message */
-extern char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart);
+extern char *UART_get_deverrormsg(uart_ctx_t *ctx,
+                                  uart_t *uart);
 
 /* Get the library name string */
 extern char *UART_get_libname(void);
@@ -327,101 +391,159 @@ extern LIBUART_API int UART_init(uart_ctx_t **ret_ctx);
 extern LIBUART_API int UART_free(uart_ctx_t *ctx);
 
 /* Return a list from all current available UART devices on system */
-extern LIBUART_API ssize_t UART_get_device_list(uart_ctx_t *ctx, uart_t **ret_uarts);
+extern LIBUART_API ssize_t UART_get_device_list(uart_ctx_t *ctx,
+                                                uart_t **ret_uarts,
+                                                size_t num);
 
 /* Opens an UART interface by device name */
-extern LIBUART_API uart_t *UART_dev_open_name(uart_ctx_t *ctx, const char *devname, enum e_baud baud, const char *opt);
+extern LIBUART_API uart_t *UART_dev_open_name(uart_ctx_t *ctx,
+                                              const char *devname,
+                                              enum e_baud baud,
+                                              const char *opt);
 
 /* Opens an UART interface */
-extern LIBUART_API int UART_dev_open(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud, const char *opt);
+extern LIBUART_API int UART_dev_open(uart_ctx_t *ctx,
+                                     uart_t *uart,
+                                     enum e_baud baud,
+                                     const char *opt);
 
 /* Closes the UART interface */
-extern LIBUART_API int UART_dev_close(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API int UART_dev_close(uart_ctx_t *ctx,
+                                      uart_t *uart);
 
 /* Free UART device */
-extern LIBUART_API int UART_dev_free(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API int UART_dev_free(uart_ctx_t *ctx,
+                                     uart_t *uart);
 
 /**
  * libUART Basic Input/Output Functions
  */
 
 /* Send data over the UART interface */
-extern LIBUART_API ssize_t UART_send(uart_ctx_t *ctx, uart_t *uart, const void *send_buf, size_t len);
+extern LIBUART_API ssize_t UART_send(uart_ctx_t *ctx,
+                                     uart_t *uart,
+                                     const void *send_buf,
+                                     size_t len);
 
 /* Receive data from the UART interface */
-extern LIBUART_API ssize_t UART_recv(uart_ctx_t *ctx, uart_t *uart, void *recv_buf, size_t len);
+extern LIBUART_API ssize_t UART_recv(uart_ctx_t *ctx,
+                                     uart_t *uart,
+                                     void *recv_buf,
+                                     size_t len);
 
 /**
  * libUART Input/Output Functions
  */
 
 /* Send a string over the UART interface */
-extern LIBUART_API ssize_t UART_puts(uart_ctx_t *ctx, uart_t *uart, const char *msg);
+extern LIBUART_API ssize_t UART_puts(uart_ctx_t *ctx,
+                                     uart_t *uart,
+                                     const char *msg);
 
 /* Send a formatted string over the UART interface */
-extern LIBUART_API ssize_t UART_printf(uart_ctx_t *ctx, uart_t *uart, const char *fmt, ...);
+extern LIBUART_API ssize_t UART_printf(uart_ctx_t *ctx,
+                                       uart_t *uart,
+                                       const char *fmt,
+                                       ...);
 
 /* Send a character over the UART interface */
-extern LIBUART_API int UART_putc(uart_ctx_t *ctx, uart_t *uart, char c);
+extern LIBUART_API int UART_putc(uart_ctx_t *ctx,
+                                 uart_t *uart,
+                                 char c);
 
 /* Receive a character from the UART interface */
-extern LIBUART_API int UART_getc(uart_ctx_t *ctx, uart_t *uart, char *ret_c);
+extern LIBUART_API int UART_getc(uart_ctx_t *ctx,
+                                 uart_t *uart,
+                                 char *ret_c);
 
 /* Flush not sent data from the UART interface */
-extern LIBUART_API int UART_flush(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API int UART_flush(uart_ctx_t *ctx,
+                                  uart_t *uart);
 
 /* Set pin state from the UART interface */
-extern LIBUART_API int UART_set_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, int state);
+extern LIBUART_API int UART_set_pin(uart_ctx_t *ctx,
+                                    uart_t *uart,
+                                    enum e_pins pin,
+                                    enum e_pin_state state);
 
 /* Get pin state from the UART interface */
-extern LIBUART_API int UART_get_pin(uart_ctx_t *ctx, uart_t *uart, enum e_pins pin, int *ret_state);
+extern LIBUART_API int UART_get_pin(uart_ctx_t *ctx,
+                                    uart_t *uart,
+                                    enum e_pins pin,
+                                    int *ret_state);
 
 /**
  * libUART Configuration Functions
  */
 
 /* Set baud rate from the UART interface */
-extern LIBUART_API int UART_set_baud(uart_ctx_t *ctx, uart_t *uart, enum e_baud baud);
+extern LIBUART_API int UART_set_baud(uart_ctx_t *ctx,
+                                     uart_t *uart,
+                                     enum e_baud baud);
 
 /* Get baud rate from the UART interface */
-extern LIBUART_API int UART_get_baud(uart_ctx_t *ctx, uart_t *uart, int *ret_baud);
+extern LIBUART_API int UART_get_baud(uart_ctx_t *ctx,
+                                     uart_t *uart,
+                                     int *ret_baud);
 
 /* Set number of data bits from the UART interface */
-extern LIBUART_API int UART_set_databits(uart_ctx_t *ctx, uart_t *uart, enum e_data data_bits);
+extern LIBUART_API int UART_set_databits(uart_ctx_t *ctx,
+                                         uart_t *uart,
+                                         enum e_data data_bits);
 
 /* Get number of data bits from the UART interface */
-extern LIBUART_API int UART_get_databits(uart_ctx_t *ctx, uart_t *uart, int *ret_data_bits);
+extern LIBUART_API int UART_get_databits(uart_ctx_t *ctx,
+                                         uart_t *uart,
+                                         int *ret_data_bits);
 
 /* Set parity from the UART interface */
-extern LIBUART_API int UART_set_parity(uart_ctx_t *ctx, uart_t *uart, enum e_parity parity);
+extern LIBUART_API int UART_set_parity(uart_ctx_t *ctx,
+                                       uart_t *uart,
+                                       enum e_parity parity);
 
 /* Get parity from the UART interface */
-extern LIBUART_API int UART_get_parity(uart_ctx_t *ctx, uart_t *uart, int *ret_parity);
+extern LIBUART_API int UART_get_parity(uart_ctx_t *ctx,
+                                       uart_t *uart,
+                                       int *ret_parity);
 
 /* Set number of stop bits from the UART interface */
-extern LIBUART_API int UART_set_stopbits(uart_ctx_t *ctx, uart_t *uart, enum e_stop stop_bits);
+extern LIBUART_API int UART_set_stopbits(uart_ctx_t *ctx,
+                                         uart_t *uart,
+                                         enum e_stop stop_bits);
 
 /* Get number of stop bits from the UART interface */
-extern LIBUART_API int UART_get_stopbits(uart_ctx_t *ctx, uart_t *uart, int *ret_stop_bits);
+extern LIBUART_API int UART_get_stopbits(uart_ctx_t *ctx,
+                                         uart_t *uart,
+                                         int *ret_stop_bits);
 
 /* Set flow control from the UART interface */
-extern LIBUART_API int UART_set_flowctrl(uart_ctx_t *ctx, uart_t *uart, enum e_flow flow_ctrl);
+extern LIBUART_API int UART_set_flowctrl(uart_ctx_t *ctx,
+                                         uart_t *uart,
+                                         enum e_flow flow_ctrl);
 
 /* Get flow control from the UART interface */
-extern LIBUART_API int UART_get_flowctrl(uart_ctx_t *ctx, uart_t *uart, int *ret_flow_ctrl);
+extern LIBUART_API int UART_get_flowctrl(uart_ctx_t *ctx,
+                                         uart_t *uart,
+                                         int *ret_flow_ctrl);
 
 /* Get the underlying file handle from the UART interface */
-extern LIBUART_API int UART_get_handle(uart_ctx_t *ctx, uart_t *uart, HANDLE *ret_h);
+extern LIBUART_API int UART_get_handle(uart_ctx_t *ctx,
+                                       uart_t *uart,
+                                       HANDLE *ret_h);
 
 /* Get the device name from the UART interface */
-extern LIBUART_API int UART_get_dev(uart_ctx_t *ctx, uart_t *uart, char **ret_dev);
+extern LIBUART_API int UART_get_dev(uart_ctx_t *ctx,
+                                    uart_t *uart,
+                                    char **ret_dev);
 
 /**
  * libUART Miscellaneous Functions
  */
 
 /* Get the available bytes in the receive channel from the UART interface */
-extern LIBUART_API int UART_get_bytes_available(uart_ctx_t *ctx, uart_t *uart, int *ret_num);
+extern LIBUART_API int UART_get_bytes_available(uart_ctx_t *ctx,
+                                                uart_t *uart,
+                                                int *ret_num);
 
 /* Get last context error number */
 extern LIBUART_API int UART_get_ctxerror(uart_ctx_t *ctx);
@@ -433,13 +555,16 @@ extern LIBUART_API char *UART_get_ctxerrormsg(uart_ctx_t *ctx);
 extern LIBUART_API int UART_clear_ctxerror(uart_ctx_t *ctx);
 
 /* Get last UART device error number */
-extern LIBUART_API int UART_get_deverror(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API int UART_get_deverror(uart_ctx_t *ctx,
+                                         uart_t *uart);
 
 /* Get last UART device error message */
-extern LIBUART_API char *UART_get_deverrormsg(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API char *UART_get_deverrormsg(uart_ctx_t *ctx,
+                                              uart_t *uart);
 
 /* Clear UART device error */
-extern LIBUART_API int UART_clear_deverror(uart_ctx_t *ctx, uart_t *uart);
+extern LIBUART_API int UART_clear_deverror(uart_ctx_t *ctx,
+                                           uart_t *uart);
 
 /* Get the library name string */
 extern LIBUART_API char *UART_get_libname(void);
